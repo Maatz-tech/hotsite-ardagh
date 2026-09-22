@@ -63,6 +63,20 @@ sitemap — é a única coisa que falta para a nota subir.
 A acessibilidade fica em 97 pelo contraste da paleta, decisão registrada
 mais abaixo.
 
+### Crédito da Maatz
+
+Vem do web component `<maatz-footer theme="brand">`, que monta a própria UTM
+a partir de `customer-name` — não há link a manter aqui.
+
+Ele é carregado **em ociosidade**, não por `<script src>` no HTML: como tag
+normal o pre-scanner o descobre cedo e ele disputa banda com o LCP. Numa
+medição em 4G lento isso custou 8 pontos de performance e 0,8s de LCP. Como
+está abaixo da dobra, esperar a ociosidade não tem custo visível.
+
+Dentro da tag há um link de resguardo com o mesmo texto: o componente
+substitui o `innerHTML` ao registrar, então ele só aparece se o script de
+terceiro não carregar. Sem isso, o crédito sumiria nesse caso.
+
 ### Imagens
 
 `scripts/gerar-variantes.mjs` gera uma versão menor de cada foto pesada e
@@ -98,7 +112,7 @@ Todas estão marcadas como `PENDÊNCIA` no código, no ponto exato onde entram.
 | — | ~~URLs das 3 redes~~ | ✅ Instagram, LinkedIn e site institucional |
 | 4 | URL da política de privacidade | `LEGAL_LINKS` | nada |
 | — | ~~Domínio~~ | ✅ `https://ardagh.maatz.com.br` (provisório) |
-| 6 | Confirmar o crédito "Desenvolvido por Maatz" do rodapé | `public/images/footer/maatz-branco.svg` | nada — veio do Figma |
+| — | ~~Crédito da Maatz~~ | ✅ web component oficial (`rodape.maatz.com.br`) |
 | — | ~~Imagem OG 1200×630~~ | ✅ gerada com os assets reais do site |
 | — | ~~Favicon~~ | ✅ marca AMP, em .ico + 32/192/512 + apple-touch |
 | — | ~~Remote do GitHub~~ | ✅ `Maatz-tech/hotsite-ardagh`, privado |

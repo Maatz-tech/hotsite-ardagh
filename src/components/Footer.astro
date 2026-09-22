@@ -10,7 +10,7 @@
 import Instagram from './icons/Instagram.astro';
 import LinkedIn from './icons/LinkedIn.astro';
 import Site from './icons/Site.astro';
-import { SOCIAL_LINKS, LEGAL_LINKS, MAATZ_URL } from '../data/site';
+import { SOCIAL_LINKS, LEGAL_LINKS } from '../data/site';
 
 const ICONS = { Instagram, LinkedIn, Site };
 ---
@@ -85,25 +85,23 @@ const ICONS = { Instagram, LinkedIn, Site };
         }
       </ul>
 
-      <p class="flex items-center gap-2 text-sm leading-[1.2] text-surface">
-        Desenvolvido por
+      <!-- Crédito da Maatz pelo web component oficial. Ele monta a UTM
+           sozinho a partir de `customer-name`, então não há link a manter
+           aqui. `brand` é o tema de fundo colorido: texto e logo em branco.
+
+           O conteúdo aqui dentro é o resguardo: o componente substitui o
+           innerHTML quando registra, então isto só aparece se o script de
+           terceiro não carregar. Sem ele, o crédito simplesmente sumiria. -->
+      <maatz-footer theme="brand" customer-name="Ardagh Metal Packaging">
         <a
-          href={MAATZ_URL}
+          href="https://maatz.com.br"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Maatz (abre em nova aba)"
-          class="credito-maatz -my-[13px] flex min-h-11 items-center"
+          class="credito-reserva"
         >
-          <img
-            src="/images/footer/maatz-branco.svg"
-            alt="Maatz"
-            width="72"
-            height="18"
-            class="h-[18px] w-[72px]"
-            loading="lazy"
-          />
+          Desenvolvido por Maatz
         </a>
-      </p>
+      </maatz-footer>
     </div>
   </div>
 </footer>
@@ -124,8 +122,21 @@ const ICONS = { Instagram, LinkedIn, Site };
     transition: color 200ms ease;
   }
 
-  .credito-maatz {
-    transition: opacity 200ms ease;
+  /* O custom element é inline por padrão, então a caixa dele herda a
+     altura de linha do contexto e a faixa legal crescia 8px. Como flex com
+     line-height 1, ela volta a medir o conteúdo. */
+  maatz-footer {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+  }
+
+  /* Só aparece se o web component não registrar. */
+  .credito-reserva {
+    font-size: 14px;
+    line-height: 1.2;
+    color: var(--color-surface);
+    text-decoration: underline;
   }
 
   .social-btn {
@@ -140,10 +151,6 @@ const ICONS = { Instagram, LinkedIn, Site };
       color: var(--color-surface);
     }
 
-    .credito-maatz:hover {
-      opacity: 0.7;
-    }
-
     .social-btn:hover {
       transform: translateY(-2px);
       background: var(--color-accent);
@@ -156,4 +163,27 @@ const ICONS = { Instagram, LinkedIn, Site };
   import { revealStagger } from '../lib/motion';
 
   revealStagger('footer [data-reveal-stagger]');
+
+  /* O crédito da Maatz vem de um web component hospedado fora. Como um
+     <script src> normal ele é descoberto pelo pre-scanner e disputa banda
+     com o LCP: numa medição em 4G lento isso custou 8 pontos de
+     performance e 0,8s de LCP. Como ele está abaixo da dobra e o resguardo
+     já mostra o crédito, dá para esperar a ociosidade — mesmo raciocínio do
+     `aposCarregar()` em src/lib/motion.ts. */
+  const carregarCredito = () => {
+    if (document.querySelector('script[data-credito-maatz]')) return;
+    const s = document.createElement('script');
+    s.type = 'module';
+    s.src = 'https://rodape.maatz.com.br/v1.js';
+    s.dataset.creditoMaatz = '';
+    document.head.append(s);
+  };
+
+  const agendar = () =>
+    'requestIdleCallback' in window
+      ? requestIdleCallback(carregarCredito, { timeout: 2000 })
+      : setTimeout(carregarCredito, 300);
+
+  if (document.readyState === 'complete') agendar();
+  else addEventListener('load', agendar, { once: true });
 </script>

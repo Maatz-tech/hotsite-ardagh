@@ -66,10 +66,6 @@ export const LEGAL_LINKS = [
   { label: 'Política de Privacidade', href: 'https://eureca.me/politica-de-privacidade/' },
 ] as const;
 
-/** Crédito do rodapé — link com UTM para atribuição da Maatz. */
-export const MAATZ_URL =
-  'https://maatz.com.br?utm_source=ardagh&utm_medium=footer&utm_campaign=portfolio';
-
 /** Prazo de inscrição — aparece na tarja e no selo do "jeito Ardagh". */
 export const PRAZO_CURTO = '05/11';
 export const PRAZO_LONGO = '05/NOV';
