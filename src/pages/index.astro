@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import HeroSection from '../components/sections/HeroSection.astro';
+import TarjaSection from '../components/sections/TarjaSection.astro';
+import MateriaPrimaSection from '../components/sections/MateriaPrimaSection.astro';
+import OProgramaSection from '../components/sections/OProgramaSection.astro';
+import BeneficiosSection from '../components/sections/BeneficiosSection.astro';
+import PreRequisitosSection from '../components/sections/PreRequisitosSection.astro';
+import EtapasSection from '../components/sections/EtapasSection.astro';
+import JeitoArdaghSection from '../components/sections/JeitoArdaghSection.astro';
+import AArdaghSection from '../components/sections/AArdaghSection.astro';
+---
+
+<Base
+  title="Programa Crescer | Estágio Ardagh Metal Packaging 2027"
+  preloadImage={["/images/hero/bg.webp", "/images/hero/foto-1.webp"]}
+  description="Programa de Estágio Ardagh Metal Packaging 2027. Você não precisa chegar pronto, precisa começar. Inscrições até 05/11."
+>
+  <Header />
+
+  <main id="main">
+    <HeroSection />
+    <TarjaSection />
+    <MateriaPrimaSection />
+    <OProgramaSection />
+    <BeneficiosSection />
+    <PreRequisitosSection />
+    <EtapasSection />
+    <JeitoArdaghSection />
+    <AArdaghSection />
+  </main>
+
+  <Footer />
+</Base>

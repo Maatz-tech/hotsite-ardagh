@@ -1,0 +1,222 @@
+---
+/**
+ * Matéria prima — Figma 6024:374 (desktop 1440×645) e 6032:3718 (mobile 375×1179).
+ *
+ * Duas colunas no desktop (489 + 32 + 695, alinhadas pela BASE — `items-end`:
+ * a coluna da direita é mais curta e encosta no rodapé da esquerda), uma
+ * coluna só no mobile, na ordem título → colagem → texto → destaque → CTA.
+ * Os gaps caem sozinhos: 40 em tudo no mobile, 40 na coluna esquerda e 32
+ * na direita/entre colunas no desktop.
+ *
+ * A colagem de fotos é o mesmo padrão validado no hero: bloco de proporção
+ * fixa 399×311 com `container-type: inline-size` e TODAS as medidas em `cqw`
+ * (valor_do_figma / 399 × 100). O Figma entrega o mobile achatado num PNG só
+ * (image 378, 798×622 = exatamente 2× o bloco do desktop) — em vez de manter
+ * dois jogos de imagem, a colagem é montada uma vez e encolhe proporcional.
+ *
+ * As fotos saem da `rawImages` (a original enviada ao Figma), recortadas no
+ * enquadramento que o `get_design_context` informa. O export do nó traria o
+ * recorte da pessoa achatado contra o que está atrás e o raio assado na
+ * imagem — ver QA-017 e QA-027. Raio e pílula verde ficam no CSS.
+ */
+import Button from '../Button.astro';
+import RevealText from '../RevealText.astro';
+import LatinhasTrio from '../icons/LatinhasTrio.astro';
+import { CTA_URL, CTA_LABEL } from '../../data/site';
+---
+
+<section id="materia-prima" class="section-y bg-surface">
+  <div class="container-lp">
+    <div class="flex flex-col gap-10 lg:flex-row lg:items-end lg:gap-8">
+      <!-- Coluna esquerda: título + colagem -->
+      <div class="col-esq flex flex-col items-start gap-10 lg:min-w-0 lg:flex-1">
+        <RevealText
+          as="h2"
+          class="h2 titulo"
+          text="Antes de virar lata, |tudo é **matéria** **prima.**"
+        />
+
+        <!-- Colagem. Tudo em cqw sobre o bloco de 399×311 — as medidas são as
+             do Figma divididas por 399. A ordem no DOM é a ordem de pintura
+             do Figma: parede, vitrô, recorte, pílula. -->
+        <div class="composicao w-full max-w-[399px]" data-reveal-stagger>
+          <!-- parede com o letreiro, à esquerda -->
+          <img
+            src="/images/materia-prima/foto-parede.webp"
+            alt=""
+            aria-hidden="true"
+            width="310"
+            height="474"
+            loading="lazy"
+            decoding="async"
+            class="peca parede"
+          />
+
+          <!-- vitrô de blocos de vidro, à direita -->
+          <img
+            src="/images/materia-prima/foto-vitro.webp"
+            alt=""
+            aria-hidden="true"
+            width="436"
+            height="622"
+            loading="lazy"
+            decoding="async"
+            class="peca vitro"
+          />
+
+          <!-- o recorte da pessoa, por cima das duas fotos -->
+          <img
+            src="/images/materia-prima/recorte.webp"
+            alt="Colaboradora da Ardagh Metal Packaging segurando uma lata"
+            width="606"
+            height="622"
+            loading="lazy"
+            decoding="async"
+            class="peca recorte"
+          />
+
+          <!-- pílula verde com o trio de latinhas. O retângulo do export não
+               entra: cor e raio vêm do token (QA-026). O wrapper existe porque
+               o <style> com escopo do Astro não carimba a raiz de um
+               componente filho — ver QA-030. -->
+          <div class="peca pilula">
+            <LatinhasTrio class="size-full" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna direita: texto, destaque e CTA -->
+      <div class="flex flex-col items-start gap-10 lg:w-[695px] lg:shrink-0 lg:gap-8">
+        <div class="body texto w-full" data-reveal>
+          <p>
+            No processo produtivo, o alumínio começa como um disco e vai ganhando forma,
+            estrutura e resistência até virar a lata que todo mundo reconhece. Aqui na
+            Ardagh, é assim com as pessoas também.
+          </p>
+          <p>
+            Você provavelmente já segurou uma lata produzida pela Ardagh, mesmo sem saber.
+            Estamos por trás de bebidas presentes no seu dia a dia e temos orgulho de
+            construir, nos bastidores, o que faz grandes marcas chegarem mais longe.
+          </p>
+          <p>
+            No <strong>Programa Crescer</strong>, você começa sem precisar ter experiência
+            prévia. Com vontade de aprender, você vai ganhando forma ao longo do programa:
+            lidera um projeto real, desenvolve novas habilidades e transforma seu trabalho
+            em impacto.
+          </p>
+        </div>
+
+        <p class="barra-destaque destaque w-full" data-reveal>
+          Você não precisa chegar pronto. <strong>Precisa começar.</strong>
+        </p>
+
+        <div data-reveal>
+          <Button href={CTA_URL} seta>{CTA_LABEL}</Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { revealWords, revealOnScroll, revealStagger } from '../../lib/motion';
+
+  // Três gestos, a receita do playbook: heading palavra a palavra, a colagem
+  // se montando peça a peça, e o bloco de apoio + CTA entrando logo atrás.
+  revealWords('#materia-prima [data-reveal-words]');
+  revealStagger('#materia-prima [data-reveal-stagger]');
+  revealOnScroll('#materia-prima [data-reveal]', { atraso: 0.15 });
+</script>
+
+<style>
+  /* O h2 desta seção mede 24px no mobile (Figma 6032:3742); a utilitária .h2
+     nasce em 28px. Só o corpo muda — peso, leading e cor continuam do token.
+     `.titulo` sozinho NÃO pega: o <h2> é a raiz do RevealText e não recebe o
+     carimbo data-astro-cid deste arquivo (QA-030). Ancorando o :global em
+     `.col-esq`, que é do meu template, o escopo continua valendo e não vaza. */
+  .col-esq :global(.titulo) {
+    font-size: 24px;
+  }
+
+  /* O corpo desta seção usa leading 1.3 (Figma), não o 1.5 da utilitária
+     .body — é o que faz o bloco fechar na mesma altura do desenho. O espaço
+     entre parágrafos no Figma é uma linha vazia: 1.3em, exatamente. */
+  .texto {
+    display: flex;
+    flex-direction: column;
+    gap: 1.3em;
+    line-height: 1.3;
+  }
+
+  .texto strong {
+    font-weight: 500;
+  }
+
+  /* Estrutura em .barra-destaque (global.css); aqui só o que é desta seção. */
+  .destaque {
+    color: var(--color-brand);
+  }
+
+  .destaque strong {
+    font-weight: 500;
+  }
+
+  /* --- Colagem --- */
+  .composicao {
+    position: relative;
+    aspect-ratio: 399 / 311;
+    container-type: inline-size;
+  }
+
+  .peca {
+    position: absolute;
+    display: block;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  /* Medidas do Figma (399×311) convertidas para cqw: valor / 399 × 100.
+     O raio de 24 vale para as três fotos e para a pílula. */
+  .parede,
+  .vitro,
+  .recorte,
+  .pilula {
+    border-radius: 6.015cqw;
+  }
+
+  .parede {
+    left: 0;
+    top: 0;
+    width: 38.847cqw;
+    height: 59.398cqw;
+  }
+
+  .vitro {
+    left: 45.363cqw;
+    top: 0;
+    width: 54.637cqw;
+    height: 77.945cqw;
+  }
+
+  .recorte {
+    left: 24.06cqw;
+    top: 0;
+    width: 75.94cqw;
+    height: 77.945cqw;
+  }
+
+  .pilula {
+    left: 0;
+    bottom: 0;
+    width: 38.847cqw;
+    height: 12.531cqw;
+    background: var(--color-accent);
+    color: var(--color-surface);
+  }
+
+  @media (min-width: 1024px) {
+    .col-esq :global(.titulo) {
+      font-size: 36px;
+    }
+  }
+</style>

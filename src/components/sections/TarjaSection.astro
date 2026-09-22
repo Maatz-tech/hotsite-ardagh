@@ -1,0 +1,197 @@
+---
+/**
+ * Tarja corrida — Figma 6021:363 (desktop) e 6032:3707 (mobile).
+ *
+ * No Figma é uma fileira estática que sangra para fora do frame. Aqui vira
+ * esteira: o conjunto de frases é repetido 4× e o trilho anda até -50%, ou
+ * seja, exatamente dois conjuntos. Quando o segundo par sai de cena, o
+ * terceiro está desenhando o mesmo traçado — o corte é imperceptível e o
+ * laço nunca "reseta" visivelmente.
+ *
+ * O espaçamento vai como margem em CADA item, e não como `gap` do flex: com
+ * `gap` o trilho mede soma(itens) + gap×(n-1), e aí -50% não cai num limite
+ * de conjunto e a emenda aparece.
+ *
+ * Quantos conjuntos são necessários depende da largura da tela: o laço anda
+ * METADE do trilho, então a outra metade é tudo que existe para preencher o
+ * viewport. Quatro conjuntos dão conta até ~1800px e deixam meia tela vazia
+ * num ultrawide. Por isso o script abaixo mede e completa em tempo de
+ * execução — e ajusta a duração junto, para a velocidade em px/s não mudar
+ * com o tamanho do monitor.
+ */
+import Latinha from '../icons/Latinha.astro';
+import { PRAZO_CURTO } from '../../data/site';
+
+const FRASES = [
+  `inscrições até ${PRAZO_CURTO}`,
+  'Programa de Estágio',
+  'Ardagh Metal Packaging 2027',
+];
+
+/** Ponto de partida do servidor — cobre telas até ~1800px sem JS.
+ *  Acima disso o script completa. Tem que ser PAR. */
+const COPIAS = [0, 1, 2, 3];
+---
+
+<section id="tarja" class="tarja" aria-label="Destaques do programa">
+  <div class="tarja-trilho">
+    {
+      COPIAS.map((copia) => (
+        <div class="contents" aria-hidden={copia > 0 ? 'true' : undefined}>
+          {FRASES.map((frase) => (
+            <>
+              <p class="tarja-item tarja-frase">{frase}</p>
+              <span class="tarja-item tarja-sep">
+                <Latinha />
+              </span>
+            </>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .tarja {
+    overflow: hidden;
+    background: var(--color-accent);
+    padding-block: 12px;
+    padding-inline-start: 24px;
+    box-shadow: 0 4px 4px rgb(0 0 0 / 0.25);
+  }
+
+  .tarja-trilho {
+    display: flex;
+    width: max-content;
+    align-items: center;
+    /* A duração é recalculada pelo script a partir da largura real. Este
+       valor serve para a primeira pintura e para quando não há JS. */
+    animation: tarja-corre 40s linear infinite;
+  }
+
+  @keyframes tarja-corre {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* WCAG 2.2.2: conteúdo em movimento que começa sozinho precisa de um jeito
+     de parar. O ponteiro sobre a tarja e o foco de teclado param. */
+  .tarja:hover .tarja-trilho,
+  .tarja:focus-within .tarja-trilho {
+    animation-play-state: paused;
+  }
+
+  .tarja-item {
+    margin-inline-end: 24px;
+    flex: none;
+  }
+
+  .tarja-frase {
+    color: var(--color-surface);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* O contêiner tem o tamanho da caixa da latinha já girada:
+     (11.273 + 20) / √2 = 22.113. */
+  .tarja-sep {
+    display: inline-flex;
+    width: 22.113px;
+    height: 22.113px;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-surface);
+  }
+
+  /* Ancorado no pai de propósito: o <style> com escopo do Astro não marca a
+     raiz de um componente filho (QA-030), e um :global solto vazaria para a
+     página. Com o pai na frente, o escopo continua valendo. */
+  .tarja-sep :global(svg) {
+    width: 11.273px;
+    height: 20px;
+    rotate: 45deg;
+  }
+
+  @media (min-width: 1024px) {
+    .tarja {
+      padding-block: 16px;
+      padding-inline-start: 40px;
+    }
+
+    .tarja-item {
+      margin-inline-end: 32px;
+    }
+
+    .tarja-frase {
+      font-size: 16px;
+    }
+
+    /* (13 + 24) / √2 = 26.163 */
+    .tarja-sep {
+      width: 26.163px;
+      height: 26.163px;
+    }
+
+    .tarja-sep :global(svg) {
+      width: 13px;
+      height: 24px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tarja-trilho {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  /* Velocidade em px/s. Mantém o ritmo aprovado nos dois tamanhos: telas
+     pequenas leem mais devagar. */
+  const VELOCIDADE = () => (window.innerWidth >= 1024 ? 45 : 38);
+
+  const trilho = document.querySelector<HTMLElement>('.tarja-trilho');
+  const molde = trilho?.firstElementChild as HTMLElement | undefined;
+
+  if (trilho && molde && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const original = trilho.children.length;
+
+    const dimensionar = () => {
+      const conjunto = trilho.scrollWidth / trilho.children.length;
+      if (!conjunto) return;
+
+      // O laço anda metade do trilho, então cada metade precisa cobrir o
+      // viewport sozinha — mais um conjunto de folga para a emenda nunca
+      // encostar na borda.
+      const porMetade = Math.ceil(window.innerWidth / conjunto) + 1;
+      const total = porMetade * 2;
+
+      while (trilho.children.length < total) {
+        const copia = molde.cloneNode(true) as HTMLElement;
+        copia.setAttribute('aria-hidden', 'true');
+        trilho.appendChild(copia);
+      }
+      while (trilho.children.length > Math.max(original, total)) {
+        trilho.lastElementChild!.remove();
+      }
+
+      // Duração proporcional à distância percorrida: a velocidade aparente
+      // fica igual em qualquer monitor.
+      const metade = (trilho.scrollWidth / trilho.children.length) * (trilho.children.length / 2);
+      trilho.style.animationDuration = `${(metade / VELOCIDADE()).toFixed(1)}s`;
+    };
+
+    dimensionar();
+
+    let agendado = 0;
+    addEventListener('resize', () => {
+      clearTimeout(agendado);
+      agendado = window.setTimeout(dimensionar, 150);
+    });
+  }
+</script>

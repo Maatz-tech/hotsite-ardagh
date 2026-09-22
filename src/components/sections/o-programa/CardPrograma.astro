@@ -1,0 +1,115 @@
+---
+/**
+ * Card do "O Programa" — foto com selo, título e texto.
+ * Figma 6027:708 / 6027:719 (desktop) e 6032:3786 / 6032:3796 (mobile).
+ *
+ * A foto vem do `rawImages` do Figma, recortada no enquadramento que o
+ * `get_design_context` informa, e NÃO do export do nó: o export do mobile
+ * traz o selo verde, o raio e a moldura assados no PNG. Selo, raio e
+ * recorte moram aqui no CSS, com os tokens.
+ * Ver playbook/09-qa-erros-comuns.md#qa-017, #qa-026 e #qa-027
+ *
+ * O card é informativo — não leva a lugar nenhum — então NÃO reage ao
+ * hover. Ver playbook/06-micro-interacoes.md
+ */
+import OProgramaFolha from '../../icons/OProgramaFolha.astro';
+import OProgramaFoguete from '../../icons/OProgramaFoguete.astro';
+
+interface Props {
+  imagem: string;
+  alt: string;
+  titulo: string;
+  texto: string;
+  icone: 'folha' | 'foguete';
+}
+
+const { imagem, alt, titulo, texto, icone } = Astro.props;
+const Icone = icone === 'folha' ? OProgramaFolha : OProgramaFoguete;
+---
+
+<article class="card-programa">
+  <div class="moldura">
+    <img
+      src={imagem}
+      alt={alt}
+      width="640"
+      height="396"
+      loading="lazy"
+      decoding="async"
+      class="size-full object-cover"
+    />
+    <!-- O ícone vai dentro de um elemento DESTE template: o <style> com
+         escopo do Astro não carimba a raiz de um componente filho, então
+         `.selo` precisa existir aqui. Ver #qa-030 -->
+    <span class="selo">
+      <Icone class="size-6" />
+    </span>
+  </div>
+
+  <div class="texto-bloco">
+    <h3 class="h4 titulo">{titulo}</h3>
+    <p class="body descricao">{texto}</p>
+  </div>
+</article>
+
+<style>
+  /* PENDÊNCIA DE TOKEN: o Figma arredonda a caixa e a foto em 24px, e
+     --radius-card vale 20px. Enquanto o token não for revisto no
+     global.css, o valor mora aqui, nomeado, em vez de espalhado. */
+  .card-programa {
+    --radius-selo: 16px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding: 32px;
+    border-radius: var(--radius-box);
+    background: var(--color-surface);
+  }
+
+  /* 640/396 é a proporção do Figma nos dois viewports: 320×198 no desktop
+     e 263×162,7 no mobile. Uma imagem só serve os dois, em 2× do desktop. */
+  .moldura {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 640 / 396;
+    overflow: hidden;
+    border-radius: var(--radius-box);
+  }
+
+  .selo {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: var(--radius-selo);
+    background: var(--color-accent);
+    color: var(--color-surface);
+  }
+
+  .texto-bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* PENDÊNCIA DE TOKEN: o Figma pede 20px nos dois viewports e a
+     utilitária .h3 vale 22px no mobile e 24px no desktop — por isso o
+     título não a usa. A caixa de 31px é a do Figma (texto centrado
+     nela), e não a altura natural da linha, que daria 26px. */
+  .titulo {
+    display: flex;
+    align-items: center;
+    min-height: 31px;
+  }
+
+  /* A descrição do card usa leading 1.5, não o 1.3 do corpo corrido: o
+     Figma dá 144px em 6 linhas no desktop e 168 em 7 no mobile, os dois
+     a 24px de linha. Ver a nota sobre `.body` em global.css. */
+  .descricao {
+    line-height: 1.5;
+  }
+</style>

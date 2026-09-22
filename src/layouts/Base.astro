@@ -1,0 +1,115 @@
+---
+import '../styles/global.css';
+import { SITE_URL, SITE_NAME } from '../data/site';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Caminho da imagem OG (1200×630). Relativo a /public. */
+  ogImage?: string;
+  /** Imagem do LCP — entra como <link rel="preload"> no <head>. */
+  preloadImage?: string | string[];
+  /**
+   * Bloqueia indexação. Fica LIGADO enquanto o cliente não aprova —
+   * o SEO do Lighthouse cai de propósito. Desligar no lançamento.
+   */
+  naoIndexar?: boolean;
+  /** JSON-LD extra além do Organization. */
+  dadosEstruturados?: Record<string, unknown>[];
+}
+
+const {
+  title,
+  description = 'Programa de Estágio Ardagh Metal Packaging 2027. Você não precisa chegar pronto, precisa começar. Inscrições até 05/11.',
+  ogImage = '/og.jpg',
+  preloadImage,
+  naoIndexar = true,
+  dadosEstruturados = [],
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+const ogImageUrl = new URL(ogImage, SITE_URL).href;
+const preloads = preloadImage ? [preloadImage].flat() : [];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    url: SITE_URL,
+  },
+  ...dadosEstruturados,
+];
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <!-- Favicon: a marca AMP. O .ico existe para quem pede /favicon.ico na
+         raiz sem ler o HTML; o de 32 serve a aba; o de 180 é do iOS e vai
+         sobre BRANCO, porque lá o alfa é composto sobre preto e o anel
+         cinza do logo sumiria. -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>{title}</title>
+
+    {naoIndexar && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Marca <html> como "com JS" ANTES do primeiro paint: é o que
+         permite o estado inicial dos reveals morar no CSS sem quebrar
+         a página para quem está sem JS. Ver playbook/05-animacao.md -->
+    <script is:inline>document.documentElement.classList.add('js');</script>
+
+    <!-- Gotham Rounded, do próprio domínio: sem preconnect, sem terceiro no
+         caminho crítico. Só os dois pesos que aparecem acima da dobra são
+         pré-carregados; Light e Bold são raros e chegam pelo CSS. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/gotham-rounded-book.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/gotham-rounded-medium.woff2"
+      crossorigin
+    />
+
+    {preloads.map((src) => <link rel="preload" as="image" href={src} />)}
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:locale" content="pt_BR" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+  </head>
+  <body class="min-h-screen">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand focus:px-4 focus:py-2 focus:text-surface"
+    >
+      Ir para o conteúdo
+    </a>
+    <slot />
+  </body>
+</html>

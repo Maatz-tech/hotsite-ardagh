@@ -1,0 +1,27 @@
+---
+/**
+ * LinkedIn — exportado de Figma 6028:1520. Herda a cor via currentColor.
+ * O glifo tem 19.2px dentro de um frame de 24 no Figma; o viewBox
+ * negativo recria essa folga para alinhar opticamente com os outros.
+ */
+interface Props {
+  class?: string;
+}
+const { class: klass = '' } = Astro.props;
+---
+
+<svg
+  viewBox="-2.4 -2.4 24 24"
+  fill="currentColor"
+  aria-hidden="true"
+  focusable="false"
+  class={klass}
+>
+  <path
+    d="M19.1999 19.1996V12.1676C19.1999 8.71158 18.4559 6.07158 14.4239 6.07158C12.4799 6.07158 11.1839 7.12758 10.6559 8.13558H10.6079V6.38358H6.79187V19.1996H10.7759V12.8396C10.7759 11.1596 11.0879 9.55158 13.1519 9.55158C15.1919 9.55158 15.2159 11.4476 15.2159 12.9356V19.1756H19.1999V19.1996Z"
+  ></path>
+  <path d="M0.311987 6.38389H4.29599V19.1999H0.311987V6.38389Z"></path>
+  <path
+    d="M2.304 0C1.032 0 0 1.032 0 2.304C0 3.576 1.032 4.632 2.304 4.632C3.576 4.632 4.608 3.576 4.608 2.304C4.608 1.032 3.576 0 2.304 0Z"
+  ></path>
+</svg>

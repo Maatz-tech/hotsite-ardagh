@@ -1,0 +1,159 @@
+---
+/**
+ * Rodapé — Figma 6028:1447 + 6028:1535 (desktop) e 6033:4598 + 6033:4683
+ * (mobile). São duas faixas de azuis diferentes: a principal com as três
+ * marcas, e a legal com a política de privacidade e o crédito.
+ *
+ * O rodapé usa grade de 1200 (margem de 120 no 1440), e não os 1216 do
+ * resto da página — por isso a .footer-lp própria em vez de .container-lp.
+ */
+import Instagram from './icons/Instagram.astro';
+import LinkedIn from './icons/LinkedIn.astro';
+import Site from './icons/Site.astro';
+import { SOCIAL_LINKS, LEGAL_LINKS, MAATZ_URL } from '../data/site';
+
+const ICONS = { Instagram, LinkedIn, Site };
+---
+
+<footer class="on-dark">
+  <!-- Faixa principal: Eureca · Ardagh Metal Packaging · redes -->
+  <div class="bg-brand-band">
+    <div
+      class="footer-lp flex flex-col items-center gap-10 py-10 lg:flex-row lg:justify-between lg:py-20"
+      data-reveal-stagger
+    >
+      <img
+        src="/images/footer/eureca.webp"
+        alt="Eureca"
+        width="336"
+        height="62"
+        class="h-6 w-[130px] lg:h-[30px] lg:w-[164px]"
+        loading="lazy"
+      />
+
+      <img
+        src="/images/footer/amp-branco.svg"
+        alt="Ardagh Metal Packaging"
+        width="356"
+        height="64"
+        class="h-auto w-[356px] max-w-full"
+        loading="lazy"
+      />
+
+      <ul class="flex items-center gap-2">
+        {
+          SOCIAL_LINKS.map((social) => {
+            const Icon = ICONS[social.icon];
+            return (
+              <li>
+                <a
+                  href={social.href}
+                  aria-label={social.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="social-btn flex size-10 items-center justify-center rounded-full bg-surface text-ink"
+                >
+                  <Icon class="size-6" />
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+  </div>
+
+  <!-- Faixa legal -->
+  <div class="bg-brand-deep">
+    <div
+      class="footer-lp flex flex-col items-center gap-5 py-6 lg:flex-row lg:justify-between lg:gap-4 lg:py-[25px]"
+    >
+      <ul class="flex items-center gap-4 text-sm leading-[1.2]">
+        {
+          LEGAL_LINKS.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="legal-link underline"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="flex items-center gap-2 text-sm leading-[1.2] text-surface">
+        Desenvolvido por
+        <a
+          href={MAATZ_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Maatz (abre em nova aba)"
+          class="credito-maatz -my-[13px] flex min-h-11 items-center"
+        >
+          <img
+            src="/images/footer/maatz-branco.svg"
+            alt="Maatz"
+            width="72"
+            height="18"
+            class="h-[18px] w-[72px]"
+            loading="lazy"
+          />
+        </a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* O rodapé tem margem de 120 no 1440 (conteúdo de 1200), diferente dos
+     112 do resto da página. O max-width soma o padding pelo mesmo motivo
+     que a .container-lp. */
+  .footer-lp {
+    width: 100%;
+    max-width: calc(1200px + 48px);
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  .legal-link {
+    color: var(--color-line);
+    transition: color 200ms ease;
+  }
+
+  .credito-maatz {
+    transition: opacity 200ms ease;
+  }
+
+  .social-btn {
+    transition:
+      transform 200ms ease,
+      background-color 200ms ease,
+      color 200ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .legal-link:hover {
+      color: var(--color-surface);
+    }
+
+    .credito-maatz:hover {
+      opacity: 0.7;
+    }
+
+    .social-btn:hover {
+      transform: translateY(-2px);
+      background: var(--color-accent);
+      color: var(--color-surface);
+    }
+  }
+</style>
+
+<script>
+  import { revealStagger } from '../lib/motion';
+
+  revealStagger('footer [data-reveal-stagger]');
+</script>

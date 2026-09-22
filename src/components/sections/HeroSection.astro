@@ -1,0 +1,247 @@
+---
+/**
+ * Hero — Figma 6009:409 (desktop 1440×706) e 6032:3416 (mobile 375×904).
+ *
+ * A composição de imagens é a mesma nos dois: o Figma exporta o mobile
+ * achatado num PNG só (image 377, 1256×852), que é exatamente a versão
+ * 2× do bloco de 628×426 do desktop. Em vez de carregar dois conjuntos
+ * de imagem, a composição é montada uma vez com as peças reais e medida
+ * em `cqw` — assim ela encolhe proporcional e bate nos dois tamanhos.
+ *
+ * Movimento: mesmo padrão do hero do hotsite-solar-cocacola. Por QA-006 o
+ * que é LCP não revela — o lockup, o <h1> e as fotos aparecem imediatos.
+ * Entram com reveal só os elementos secundários (bloco de apoio e CTA),
+ * com atraso curto. A latinha flutua em transform puro. Tudo morre sob
+ * prefers-reduced-motion.
+ */
+import Button from '../Button.astro';
+import BlobHero from '../icons/BlobHero.astro';
+import { CTA_URL, CTA_LABEL } from '../../data/site';
+---
+
+<section id="hero" class="on-dark relative isolate overflow-hidden">
+  <img
+    src="/images/hero/bg.webp"
+    alt=""
+    aria-hidden="true"
+    width="1920"
+    height="941"
+    class="absolute inset-0 -z-10 size-full object-cover"
+    fetchpriority="high"
+  />
+
+  <div
+    class="container-lp flex flex-col gap-12 pb-16 pt-32 lg:flex-row lg:items-start lg:justify-between lg:gap-8 lg:pb-[100px] lg:pt-[180px]"
+  >
+    <!-- Coluna de texto -->
+    <div class="flex flex-col items-start gap-10 lg:min-w-0 lg:flex-1">
+      <img
+        src="/images/hero/programa-crescer.svg"
+        alt="Programa Crescer"
+        width="251"
+        height="80"
+        class="h-16 w-[201px] lg:h-20 lg:w-[251px]"
+        fetchpriority="high"
+      />
+
+      <div class="flex flex-col gap-5">
+        <h1 class="text-[36px] font-medium leading-[1.2] text-surface lg:text-[44px]">
+          Dê forma à sua história.<br />Vem crescer com a AMP.
+        </h1>
+
+        <div
+          class="border-l-[3px] border-accent pl-4 text-lg leading-[1.5] text-surface lg:text-xl"
+          data-reveal
+        >
+          <p>Programa de Estágio</p>
+          <p class="font-medium">Ardagh Metal Packaging 2027</p>
+        </div>
+      </div>
+
+      <div data-reveal>
+        <Button href={CTA_URL} variant="accent" seta>{CTA_LABEL}</Button>
+      </div>
+    </div>
+
+    <!-- Composição de imagens. Tudo em cqw sobre um bloco de proporção
+         fixa 628:426 — as medidas são as do Figma divididas por 628. -->
+    <div class="composicao w-full max-w-[628px] lg:shrink-0">
+      <!-- latas, ao fundo à direita -->
+      <img
+        src="/images/hero/foto-3.webp"
+        alt=""
+        aria-hidden="true"
+        width="352"
+        height="784"
+        class="peca foto-3"
+        fetchpriority="high"
+      />
+
+      <!-- a moldura: foto retangular com o fundo da fábrica -->
+      <img
+        src="/images/hero/foto-2.webp"
+        alt=""
+        aria-hidden="true"
+        width="756"
+        height="782"
+        class="peca foto-2"
+        fetchpriority="high"
+      />
+
+      <!-- a forma verde. Vai num wrapper porque o <style> com escopo do
+           Astro não marca a raiz de um componente filho — sem ele as
+           regras .peca/.blob não alcançam o <svg>. -->
+      <div class="peca blob text-accent">
+        <BlobHero class="size-full" />
+      </div>
+
+      <!-- o selo do programa. Em duas camadas pelo mesmo motivo da latinha:
+           o reveal termina chamando liberar(), que limpa o transform inline
+           e levaria o parallax junto se os dois morassem no mesmo elemento. -->
+      <div class="peca selo">
+        <img
+          src="/images/hero/selo.webp"
+          alt=""
+          aria-hidden="true"
+          width="272"
+          height="280"
+          class="size-full"
+          data-reveal
+        />
+      </div>
+
+      <!-- a foto principal -->
+      <img
+        src="/images/hero/foto-1.webp"
+        alt="Estagiária da Ardagh Metal Packaging na linha de produção"
+        width="785"
+        height="850"
+        class="peca foto-1"
+        fetchpriority="high"
+      />
+
+      <!-- a latinha, por cima de tudo. Duas camadas de propósito: o wrapper
+           leva o parallax e a imagem leva a flutuação — animação CSS vence
+           style inline, então as duas juntas no mesmo elemento se anulam. -->
+      <div class="peca latinha">
+        <img
+          src="/images/hero/latinha.webp"
+          alt=""
+          aria-hidden="true"
+          width="180"
+          height="288"
+          class="size-full flutua"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { parallax, revealOnScroll } from '../../lib/motion';
+
+  // Acima da dobra só entra o que NÃO é LCP: o bloco de apoio, o CTA e o
+  // selo. O lockup, o <h1> e as fotos aparecem prontos.
+  // Ver playbook/09-qa-erros-comuns.md#qa-006
+  revealOnScroll('#hero [data-reveal]', { atraso: 0.1 });
+
+  /* Parallax da composição — profundidade, não efeito.
+     Todas as peças leem o progresso da MESMA referência (#hero), senão cada
+     uma calcula o seu e elas desencontram. E `ancora: 'parado'` faz o
+     deslocamento começar em zero: antes do primeiro scroll cada peça está
+     exatamente onde o Figma a colocou.
+
+     O que fica mais longe fica para trás; o que está na frente adianta.
+     A moldura e o recorte da pessoa andam com o MESMO número — se
+     divergirem, a pessoa descola da foto. */
+  const comum = { alvo: '#hero', offset: ['start start', 'end start'], ancora: 'parado' } as const;
+
+  parallax('#hero .blob, #hero .selo', { ...comum, distancia: -22 });
+  parallax('#hero .foto-3', { ...comum, distancia: -12 });
+  parallax('#hero .foto-2, #hero .foto-1', { ...comum, distancia: 6 });
+  // A latinha é a única peça que TAMBÉM flutua por conta própria; com os
+  // 28px das outras a soma dos dois movimentos ficava demais. Metade do
+  // curso mantém a profundidade sem competir com a flutuação.
+  parallax('#hero .latinha', { ...comum, distancia: 14 });
+</script>
+
+<style>
+  .composicao {
+    position: relative;
+    aspect-ratio: 628 / 426;
+    container-type: inline-size;
+  }
+
+  .peca {
+    position: absolute;
+    display: block;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  /* Medidas do Figma (628×426) convertidas para cqw: valor / 628 × 100 */
+  .foto-3 {
+    left: 71.975cqw;
+    top: 5.414cqw;
+    width: 28.025cqw;
+    height: 62.42cqw;
+    border-radius: 5.096cqw;
+  }
+
+  .foto-2 {
+    left: 5.414cqw;
+    bottom: 0.159cqw;
+    width: 60.191cqw;
+    height: 62.261cqw;
+    border-radius: 5.096cqw;
+  }
+
+  .blob {
+    left: 0;
+    top: 0;
+    width: 69.108cqw;
+    height: 46.656cqw;
+  }
+
+  .selo {
+    left: 0.159cqw;
+    top: 0;
+    width: 21.656cqw;
+    height: 22.293cqw;
+  }
+
+  .foto-1 {
+    left: 8.758cqw;
+    bottom: 0.191cqw;
+    width: 62.484cqw;
+    height: 67.643cqw;
+  }
+
+  .latinha {
+    left: 54.299cqw;
+    top: 9.076cqw;
+    width: 14.331cqw;
+    height: 22.93cqw;
+  }
+
+  .flutua {
+    animation: flutua 6s ease-in-out infinite;
+  }
+
+  /* Transform puro, sem opacity: não encosta no LCP. */
+  @keyframes flutua {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-2.2cqw) rotate(-1.2deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flutua {
+      animation: none;
+    }
+  }
+</style>

@@ -1,0 +1,385 @@
+---
+/**
+ * Header — Figma 6009:354 (desktop) e 6032:3359 (mobile, dentro do hero).
+ * Pílula com 16px de recuo lateral e 64px de altura no mobile (raio 16),
+ * 1216×79 no desktop (raio 20).
+ *
+ * É `fixed` e não `absolute`: o Figma o mostra flutuando a 20px do topo
+ * sobre o hero, e a página tem 6251px com menu de âncora — um menu que
+ * some no primeiro scroll não serviria para nada.
+ *
+ * Ao rolar para baixo o header sai de cena; ao rolar para cima ele volta.
+ * Mesmo mecanismo do salestime-site. O `transform` daqui cria bloco de
+ * contenção, e é por isso que o <dialog> mora fora do <header> — QA-022.
+ *
+ * O menu mobile é bottom sheet, igual ao FormDrawer do template: <dialog>
+ * nativo (modalidade, foco preso, Esc e clique no backdrop vêm de graça),
+ * sobe de baixo, arrasta para baixo para fechar, sem X.
+ * Ver playbook/03-componentes-globais.md.
+ */
+import Button from './Button.astro';
+import Menu from './icons/Menu.astro';
+import { NAV_LINKS, CTA_URL, CTA_LABEL, SITE_NAME } from '../data/site';
+---
+
+<header
+  class="fixed inset-x-0 top-4 z-50 px-4 transition-transform duration-300 will-change-transform lg:top-5 lg:px-8"
+  data-header
+>
+  <div
+    class="pilula mx-auto flex h-16 max-w-lp items-center justify-between rounded-2xl bg-surface px-6 lg:h-[79px] lg:rounded-header lg:px-10"
+  >
+    <a href="#hero" class="shrink-0" aria-label={`${SITE_NAME} — início`}>
+      <img
+        src="/images/brand/amp-logo.svg"
+        alt="Ardagh Metal Packaging"
+        width="244"
+        height="44"
+        class="h-10 w-[222px] lg:h-11 lg:w-[244px]"
+        fetchpriority="high"
+      />
+    </a>
+
+    <!-- Desktop: os cinco links -->
+    <nav class="hidden lg:block" aria-label="Navegação principal">
+      <ul class="flex items-center gap-8">
+        {
+          NAV_LINKS.map((link) => (
+            <li>
+              <a href={link.href} class="nav-link text-base font-medium">
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <Button href={CTA_URL} size="sm" class="hidden lg:inline-flex">{CTA_LABEL}</Button>
+
+    <!-- Mobile: o hambúrguer -->
+    <button
+      type="button"
+      class="menu-btn -mr-2.5 flex size-11 items-center justify-center rounded-full text-ink lg:hidden"
+      aria-label="Abrir menu"
+      aria-expanded="false"
+      aria-controls="menu-mobile"
+      aria-haspopup="dialog"
+      data-menu-btn
+    >
+      <Menu class="size-6" />
+    </button>
+  </div>
+</header>
+
+<!--
+  Fora do <header> de propósito: o <dialog> modal vive na top layer, e
+  manter overlay/folha dentro de um ancestral posicionado é a receita do
+  QA-022. O Astro aceita mais de um nó raiz.
+-->
+<dialog id="menu-mobile" class="menu-sheet lg:hidden" aria-label="Menu" data-menu-sheet>
+  <div data-menu-handle class="shrink-0 px-6 pb-2 pt-3">
+    <span class="mx-auto block h-1 w-10 rounded-full bg-ink-08" aria-hidden="true"></span>
+  </div>
+
+  <nav class="px-6 pb-8 pt-2" aria-label="Navegação principal">
+    <ul class="flex flex-col">
+      {
+        NAV_LINKS.map((link) => (
+          <li>
+            <a href={link.href} class="nav-link block py-3.5 text-lg font-medium">
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <Button href={CTA_URL} size="md" class="mt-6 w-full">{CTA_LABEL}</Button>
+  </nav>
+</dialog>
+
+<style>
+  /* --- Links do menu ---
+     A cor do estado ativo mora numa regra própria, chaveada em
+     aria-current, e não numa segunda utilitária disputando `color`
+     com a primeira — QA-024. */
+  .nav-link {
+    color: var(--color-ink-body);
+    transition: color 200ms ease;
+  }
+
+  .nav-link[aria-current='true'] {
+    color: var(--color-brand);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nav-link:hover {
+      color: var(--color-brand);
+    }
+  }
+
+  /* --- Sombra ao sair do topo ---
+     No topo o header está sobre o azul do hero e o Figma não desenha sombra
+     nenhuma. Rolando, ele passa a flutuar sobre seções brancas e a pílula
+     se dissolve no fundo. A sombra é só o suficiente para descolar — não é
+     elevação, é contorno. */
+  .pilula {
+    transition: box-shadow 250ms ease;
+  }
+
+  [data-header][data-rolado] .pilula {
+    box-shadow:
+      0 1px 2px rgb(0 37 112 / 0.04),
+      0 6px 24px rgb(0 37 112 / 0.08);
+  }
+
+  /* --- Header que some ao descer e volta ao subir --- */
+  [data-header][data-escondido] {
+    /* 140% e não 100%: tem que limpar também o afastamento do topo. */
+    transform: translateY(-140%);
+  }
+
+  /* Quem navega por teclado não pode perder o header: o foco traz de volta. */
+  [data-header][data-escondido]:focus-within {
+    transform: none;
+  }
+
+  /* --- Bottom sheet --- */
+  .menu-sheet {
+    max-width: none;
+    max-height: 92dvh;
+    border: 0;
+    padding: 0;
+    background: var(--color-surface);
+    /* `auto` nas margens de cima empurra a folha para o rodapé. */
+    margin: auto auto 0;
+    width: 100%;
+    /* `auto` não serve: o <dialog> modal vem com inset:0 do navegador, e aí
+       altura automática estica até o limite em vez de abraçar o conteúdo —
+       o menu ficava com meia tela de branco abaixo do botão. */
+    height: fit-content;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    box-shadow: 0 -8px 40px rgb(51 51 51 / 0.18);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .menu-sheet::backdrop {
+    background: rgb(0 37 112 / 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  /* Entrada e saída. `allow-discrete` + @starting-style é o que faz o
+     <dialog> animar também no fechamento, sem segurar o `open` no script. */
+  .menu-sheet,
+  .menu-sheet::backdrop {
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+      overlay 0.3s ease allow-discrete,
+      display 0.3s ease allow-discrete;
+  }
+
+  .menu-sheet {
+    transform: translateY(100%);
+  }
+  .menu-sheet[open] {
+    transform: translateY(0);
+  }
+  @starting-style {
+    .menu-sheet[open] {
+      transform: translateY(100%);
+    }
+  }
+
+  .menu-sheet::backdrop {
+    opacity: 0;
+  }
+  .menu-sheet[open]::backdrop {
+    opacity: 1;
+  }
+  @starting-style {
+    .menu-sheet[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* Durante o arraste a transição sai do caminho: o dedo comanda a posição. */
+  .menu-sheet[data-arrastando] {
+    transition: none;
+  }
+
+  [data-menu-handle] {
+    touch-action: none;
+    cursor: grab;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu-sheet,
+    .menu-sheet::backdrop {
+      transition:
+        opacity 0.2s ease,
+        overlay 0.2s ease allow-discrete,
+        display 0.2s ease allow-discrete;
+      transform: none;
+    }
+    .menu-sheet[open] {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const cabecalho = document.querySelector<HTMLElement>('[data-header]');
+  const folha = document.querySelector<HTMLDialogElement>('[data-menu-sheet]');
+
+  if (cabecalho && folha) {
+    const botao = cabecalho.querySelector<HTMLButtonElement>('[data-menu-btn]');
+    const alca = folha.querySelector<HTMLElement>('[data-menu-handle]');
+
+    const sinalizar = (aberto: boolean) => {
+      botao?.setAttribute('aria-expanded', String(aberto));
+      botao?.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+    };
+
+    botao?.addEventListener('click', () => {
+      folha.showModal();
+      sinalizar(true);
+    });
+
+    folha.addEventListener('close', () => {
+      folha.style.transform = '';
+      sinalizar(false);
+      botao?.focus();
+    });
+
+    // Clicar no backdrop fecha. O <dialog> recebe o clique quando ele cai
+    // fora da caixa de conteúdo, então basta comparar com o retângulo.
+    folha.addEventListener('click', (e) => {
+      if (e.target !== folha) return;
+      const r = folha.getBoundingClientRect();
+      const dentro =
+        e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (!dentro) folha.close();
+    });
+
+    // Clicar num link fecha antes de rolar até a âncora.
+    folha.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) folha.close();
+    });
+
+    // Arrastar a alça para baixo fecha.
+    let arrastando = false;
+    let inicio = 0;
+    let deslocamento = 0;
+
+    alca?.addEventListener('pointerdown', (e) => {
+      arrastando = true;
+      inicio = e.clientY;
+      deslocamento = 0;
+      alca.setPointerCapture(e.pointerId);
+      folha.setAttribute('data-arrastando', '');
+    });
+
+    alca?.addEventListener('pointermove', (e) => {
+      if (!arrastando) return;
+      deslocamento = Math.max(0, e.clientY - inicio);
+      folha.style.transform = `translateY(${deslocamento}px)`;
+    });
+
+    const soltar = (e: PointerEvent) => {
+      if (!arrastando) return;
+      arrastando = false;
+      folha.removeAttribute('data-arrastando');
+      if (alca?.hasPointerCapture(e.pointerId)) alca.releasePointerCapture(e.pointerId);
+      // Um terço da altura, ou 120px, o que vier primeiro.
+      const limite = Math.min(120, folha.offsetHeight / 3);
+      if (deslocamento > limite) {
+        folha.close();
+      } else {
+        folha.style.transform = '';
+      }
+    };
+
+    alca?.addEventListener('pointerup', soltar);
+    alca?.addEventListener('pointercancel', soltar);
+
+    /* --- Header reveal --- */
+    let ultimoY = window.scrollY;
+    let agendado = false;
+
+    // Recarregar a página no meio da rolagem já nasce com a sombra.
+    cabecalho.toggleAttribute('data-rolado', window.scrollY > 8);
+
+    const aoRolar = () => {
+      const y = window.scrollY;
+      // Com a folha aberta o header fica onde está: some atrás do backdrop
+      // e reaparecer no fechamento seria um salto sem motivo.
+      if (!folha.open) {
+        if (y > ultimoY && y > 120) cabecalho.setAttribute('data-escondido', '');
+        else if (y < ultimoY) cabecalho.removeAttribute('data-escondido');
+      }
+      cabecalho.toggleAttribute('data-rolado', y > 8);
+      ultimoY = y;
+      agendado = false;
+    };
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (agendado) return;
+        agendado = true;
+        requestAnimationFrame(aoRolar);
+      },
+      { passive: true },
+    );
+
+    // O menu é só do mobile: ao passar para desktop, fecha.
+    matchMedia('(min-width: 1024px)').addEventListener('change', (e) => {
+      if (e.matches && folha.open) folha.close();
+    });
+  }
+
+  /* --- Scrollspy ---
+     Marca o link da seção visível, no header e na folha. As seções ainda
+     não existem no início do projeto: sem elas o observer não roda. */
+  const links = Array.from(
+    document.querySelectorAll<HTMLAnchorElement>('[data-header] .nav-link, [data-menu-sheet] .nav-link'),
+  );
+  const secoes = [
+    ...new Set(links.map((a) => a.getAttribute('href')).filter((h): h is string => !!h?.startsWith('#'))),
+  ]
+    .map((h) => document.querySelector<HTMLElement>(h))
+    .filter((s): s is HTMLElement => s !== null);
+
+  if (secoes.length) {
+    const marcar = (id: string) => {
+      links.forEach((a) => {
+        if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+      });
+    };
+
+    const visiveis = new Map<string, number>();
+    const observer = new IntersectionObserver(
+      (entradas) => {
+        entradas.forEach((e) => {
+          if (e.isIntersecting) visiveis.set(e.target.id, e.intersectionRatio);
+          else visiveis.delete(e.target.id);
+        });
+        let melhor: string | null = null;
+        let maior = 0;
+        visiveis.forEach((ratio, id) => {
+          if (ratio > maior) {
+            maior = ratio;
+            melhor = id;
+          }
+        });
+        if (melhor) marcar(melhor);
+      },
+      { threshold: [0.15, 0.4, 0.75], rootMargin: '-96px 0px -40% 0px' },
+    );
+
+    secoes.forEach((s) => observer.observe(s));
+  }
+</script>

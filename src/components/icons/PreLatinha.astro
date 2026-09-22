@@ -1,0 +1,27 @@
+---
+/**
+ * Latinha do eyebrow — Figma 6032:4310 (asset 450e8).
+ * Desenhada EM PÉ num retângulo de 14,04×24; no Figma o nó está girado 90°,
+ * então quem gira é o contêiner (mesmo padrão de Latinha.astro).
+ * Só aparece no mobile: no desktop o nó 6031:2165 está hidden.
+ *
+ * Traçado extraído ancorando o padrão no elemento <path> e exigindo o espaço
+ * antes do atributo, e pegando todos os traçados — o padrão ingênuo casa com o
+ * sufixo do atributo de identificação da camada e devolve o nome dela.
+ * Ver playbook/09-qa-erros-comuns.md#qa-031
+ */
+interface Props {
+  class?: string;
+}
+const { class: klass = '' } = Astro.props;
+---
+
+<svg
+  viewBox="0 0 14.0379 24"
+  fill="currentColor"
+  aria-hidden="true"
+  focusable="false"
+  class={klass}
+>
+  <path d="M7.97502 0C11.4171 2.99684e-05 14.1706 2.8894 14.033 6.36218C14.0325 6.37381 13.7261 14.0844 13.5845 17.6378C13.4429 21.194 10.5475 24 7.01895 24C3.4904 23.9999 0.595411 21.1939 0.453797 17.6378L0.00494662 6.36218C-0.132736 2.88938 2.62131 0 6.0673 0H7.97502ZM11.3208 14.6591C11.3208 13.6469 10.3792 12.9084 9.37995 13.0697C7.69305 13.3423 6.31502 13.3502 4.67343 13.0852C3.66944 12.9231 2.71713 13.6602 2.71706 14.6772V17.434C2.71706 19.8098 4.64313 21.7358 7.01895 21.7359C9.39482 21.7359 11.3208 19.8098 11.3208 17.434V14.6591ZM7.04681 2.30572C4.64327 2.30572 2.69584 4.2706 2.69584 6.69561C2.69587 9.12059 4.64329 11.0851 7.04681 11.0851C9.45023 11.0849 11.3973 9.12052 11.3973 6.69561C11.3973 4.27067 9.45025 2.30584 7.04681 2.30572Z"></path>
+</svg>

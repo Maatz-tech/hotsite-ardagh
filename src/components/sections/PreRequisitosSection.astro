@@ -1,0 +1,314 @@
+---
+/**
+ * O que você traz para a mesa — Figma 6031:2162 (desktop 1440×730) e
+ * 6032:4244 (mobile 375×1390).
+ *
+ * Desktop: coluna de texto de 382 à esquerda (eyebrow + h2 + parágrafo +
+ * CTA), 80 de gap, e 754 de cards à direita — dois de 361 lado a lado e um
+ * de 754 embaixo. Mobile: tudo empilhado, os três cards em coluna e o CTA
+ * por último, largura cheia.
+ *
+ * A quebra dura no <h2> ("…para |a mesa.") não é maquiagem de fonte: o
+ * desenho tem o título em DUAS linhas nos dois viewports, e é essa altura
+ * (94 no desktop, 62 no mobile) que dita todo o resto da coluna. Com Nunito,
+ * ~7% mais estreita que a Gotham Rounded do layout, a frase cabe numa linha
+ * só no 375 e a composição inteira sobe 31px. O `|` restaura as duas linhas
+ * sem tocar em corpo nem em tracking — e no desktop cai exatamente no mesmo
+ * ponto do Figma ("O que você traz para" / "a mesa.").
+ *
+ * A ordem do DOM é a do mobile, que é também a ordem de leitura correta:
+ * título, texto, cards, CTA. No desktop quem devolve o botão para a coluna
+ * da esquerda é o grid, não `order` — assim a ordem de foco nunca diverge
+ * do que se vê. A terceira faixa (`1fr`) absorve a altura sobrando dos
+ * cards; sem ela o grid distribuiria esse excesso pelas faixas do texto e
+ * empurraria o botão para baixo.
+ *
+ * ---------------------------------------------------------------------
+ * O FUNDO (o ponto crítico desta seção)
+ * ---------------------------------------------------------------------
+ * Não é gradiente linear: é a MESMA malha do hero. O `get_design_context`
+ * entrega o mesmo asset (74ede.png) nos dois nós, e ele é byte a byte o
+ * que já está em `/images/hero/bg.webp` — conferido: diferença máxima de
+ * 4/255 depois de reescalar, que é ruído do WebP q82. Por isso esta seção
+ * NÃO carrega imagem nova: reusa a do hero, que a essa altura já está no
+ * cache (lá ela entra com fetchpriority="high"). Zero byte a mais.
+ *
+ * A composição muda por viewport, e foi medida contra os PNGs de
+ * referência ponto a ponto:
+ *
+ *   desktop → #056eb7 chapado (--color-brand-band) + a malha GIRADA 180°
+ *             em opacity .20, object-fit: cover.   Δ máx 1/255
+ *   mobile  → a malha em opacity 1, sem rotação, object-fit: cover.
+ *                                                  Δ máx 4/255 (1584 pts)
+ *
+ * A rotação de 180° no desktop não aparece no código que o Figma gera —
+ * ele não emite flip/rotate de nó. Foi deduzida medindo: com a malha na
+ * orientação original o erro médio é 6,7/255 e o padrão sai espelhado;
+ * com rot180 cai para 0,43/255.
+ *
+ * DIVERGÊNCIA CONSCIENTE: no mobile o Figma ainda pinta, por baixo da
+ * malha, um gradiente #054f90 → #056eb7. A malha é 100% opaca e cobre esse
+ * gradiente inteiro — ele é tinta morta no arquivo. Aqui o fundo de baixo é
+ * o próprio --color-brand-band nos dois viewports, o que evita um hex novo
+ * fora do global.css e não muda um pixel do resultado.
+ */
+import Button from '../Button.astro';
+import RevealText from '../RevealText.astro';
+import CardPreRequisito from './pre-requisitos/CardPreRequisito.astro';
+import PreLatinha from '../icons/PreLatinha.astro';
+import PreFormacao from '../icons/PreFormacao.astro';
+import PreAreas from '../icons/PreAreas.astro';
+import PreFormato from '../icons/PreFormato.astro';
+import { CTA_URL, CTA_LABEL } from '../../data/site';
+
+const CARDS = [
+  {
+    titulo: 'Formação Acadêmica',
+    texto:
+      'Cursando os 2 últimos anos de bacharelado ou tecnólogo em uma Instituição de Ensino Superior (IES).',
+    Icone: PreFormacao,
+  },
+  {
+    titulo: 'Áreas de atuação',
+    texto: 'Interesse em atuar em áreas de engenharias e corporativas.',
+    Icone: PreAreas,
+  },
+  {
+    titulo: 'Formato de trabalho',
+    texto:
+      'Disponibilidade para trabalhar presencialmente (para as vagas corporativas em São Paulo: Home Office às sextas).',
+    Icone: PreFormato,
+  },
+];
+---
+
+<section
+  id="pre-requisitos"
+  class="secao on-dark section-y"
+  aria-labelledby="pre-requisitos-titulo"
+>
+  <!-- A malha do hero. Mesmo arquivo, mesma URL: quando a página chega
+       aqui ela já veio do cache. `lazy` porque a seção está abaixo da
+       dobra e não custa nada — o hero já a pediu com prioridade alta. -->
+  <img
+    src="/images/hero/bg.webp"
+    alt=""
+    aria-hidden="true"
+    width="1920"
+    height="942"
+    loading="lazy"
+    decoding="async"
+    class="malha"
+  />
+
+  <div class="container-lp bloco">
+    <div class="texto">
+      <div class="bloco-titulo">
+        <p class="eyebrow-on-dark">
+          {/* A latinha só existe no mobile: no desktop o nó 6031:2165 está
+              hidden, ou seja, é versão anterior. O wrapper é meu para o
+              <style> com escopo alcançar o <svg> do filho (#qa-030). */}
+          <span class="latinha" aria-hidden="true"><PreLatinha /></span>
+          Pré-requisitos
+        </p>
+
+        <RevealText
+          as="h2"
+          id="pre-requisitos-titulo"
+          class="h2 titulo"
+          text="O que você traz para a mesa."
+        />
+      </div>
+
+      <p class="body-lg intro" data-reveal>
+        Nosso processo é aberto a diferentes trajetórias, com foco em identificar quem tem
+        vontade de aprender e evoluir. Confira os pré-requisitos:
+      </p>
+    </div>
+
+    <div class="cards" data-reveal-stagger>
+      {
+        CARDS.map(({ titulo, texto, Icone }) => (
+          <CardPreRequisito titulo={titulo} texto={texto}>
+            <Icone />
+          </CardPreRequisito>
+        ))
+      }
+    </div>
+
+    <div class="acao" data-reveal>
+      <Button
+        href={CTA_URL}
+        variant="invert"
+        seta
+        bloco
+      >
+        {CTA_LABEL}
+      </Button>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { revealWords, revealOnScroll, revealStagger } from '../../lib/motion';
+
+  // Três gestos, a receita do playbook/05: heading palavra a palavra,
+  // parágrafo de apoio + CTA logo atrás, e os cards em cascata.
+  // O fundo NÃO ganha parallax de propósito: deslocá-lo mudaria o recorte
+  // do object-fit e, com ele, as cores medidas contra a referência.
+  revealWords('#pre-requisitos [data-reveal-words]');
+  revealOnScroll('#pre-requisitos [data-reveal]', { atraso: 0.15 });
+  revealStagger('#pre-requisitos [data-reveal-stagger]');
+</script>
+
+<style>
+  .secao {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    /* O chapado por baixo da malha. No desktop ele é metade do resultado
+       (a malha entra a 20%); no mobile é só rede de segurança enquanto a
+       imagem não pinta. */
+    background: var(--color-brand-band);
+  }
+
+  /* z-index negativo dentro do stacking context da seção: pinta acima do
+     background dela e abaixo do conteúdo. Mesmo padrão do hero. */
+  .malha {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .texto {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 32px;
+  }
+
+  .bloco-titulo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  /* PENDÊNCIA DE TOKEN: a utilitária .eyebrow é a pílula VERDE sobre fundo
+     claro. Sobre o azul o Figma usa branco a 15% com texto branco — falta
+     um `.eyebrow-on-dark` no global.css. Medidas idênticas às da .eyebrow
+     (padding 8/16, raio 24, medium, uppercase); só o corpo muda: 14px no
+     mobile, 16px no desktop. */
+  .eyebrow-on-dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    background: var(--color-on-dark-15);
+    color: var(--color-surface);
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  /* A caixa é a do nó já girado: 24 de largura por 14,038 de altura. O
+     <svg> vem em pé e gira dentro dela — transform não ocupa espaço, então
+     a caixa não muda de tamanho. */
+  .latinha {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 24px;
+    height: 14.038px;
+  }
+
+  .latinha :global(svg) {
+    width: 14.038px;
+    height: 24px;
+    rotate: 90deg;
+  }
+
+  /* O <h2> é a RAIZ do RevealText e não recebe o carimbo data-astro-cid
+     deste arquivo — `.titulo` sozinho não alcançaria. Ancorado no pai, que
+     é do meu template, o :global não vaza. Ver #qa-030 */
+  .bloco-titulo :global(.titulo) {
+    color: var(--color-surface);
+  }
+
+  /* PENDÊNCIA DE TOKEN: 18px/1.3 não tem utilitária — a .body vale 16px.
+     Mesma falta já anotada na .intro de OProgramaSection: cabe um
+     `.body-lg` no global.css. */
+  /* Estrutura em .body-lg; aqui só a cor, que é sobre o azul. */
+  .intro {
+    color: var(--color-surface);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  /* O terceiro card ocupa a linha inteira. No mobile a grade tem uma
+     coluna só e a regra é inócua; no desktop é ela que faz o card largo. */
+  .cards > :global(*:nth-child(3)) {
+    grid-column: 1 / -1;
+  }
+
+  @media (min-width: 1024px) {
+    /* Coluna de texto de 382 + cards no resto, 80 de gap. A margem faz o
+       papel do row-gap de propósito: com `row-gap` a faixa que absorve a
+       altura dos cards ganharia um vão de 32px mesmo medindo zero. */
+    .bloco {
+      display: grid;
+      grid-template-columns: 382px 1fr;
+      grid-template-rows: auto auto 1fr;
+      column-gap: 80px;
+      row-gap: 0;
+    }
+
+    .texto {
+      grid-area: 1 / 1;
+      margin-bottom: 32px;
+    }
+
+    .acao {
+      grid-area: 2 / 1;
+    }
+
+    .cards {
+      grid-area: 1 / 2 / 4 / 3;
+      align-self: start;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .eyebrow-on-dark {
+      font-size: 16px;
+    }
+
+    /* Nó 6031:2165 está hidden no desktop — versão anterior, não entra. */
+    .latinha {
+      display: none;
+    }
+
+    /* A malha do hero, girada 180° e a 20% sobre o --color-brand-band.
+       Ver o bloco "O FUNDO" no topo do arquivo. */
+    .malha {
+      opacity: 0.2;
+      transform: rotate(180deg);
+    }
+  }
+</style>

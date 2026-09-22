@@ -1,0 +1,330 @@
+---
+/**
+ * O jeito Ardagh de trabalhar — Figma 6031:2317 (desktop 1440×715) e
+ * 6033:4432 (mobile 375×1173,5).
+ *
+ * Duas colunas no desktop (488 + 80 + 648 = 1216), uma no mobile. A ordem
+ * muda entre os dois: no desktop a figura ocupa a coluna da esquerda e o
+ * cabeçalho (eyebrow + h2) abre a coluna da direita; no mobile o cabeçalho
+ * vem PRIMEIRO, a figura no meio e o corpo depois. Por isso grid com áreas
+ * nomeadas e não flex + `order`: o HTML fica na ordem de leitura do mobile
+ * (que é a ordem semântica correta) e só o desenho muda.
+ *
+ * Os gaps caem sozinhos com o grid: 40 em tudo no mobile, 32 em tudo no
+ * desktop — os dois números do Figma, sem exceção nenhuma nas duas telas.
+ *
+ * A figura é o mesmo padrão validado no hero e em matéria-prima: bloco de
+ * proporção fixa 488×440,979 com `container-type: inline-size` e TODAS as
+ * medidas em `cqw` (valor_do_figma / 488 × 100), inclusive os corpos de
+ * texto do selo. O Figma entrega o mobile achatado num PNG só (image 381,
+ * 976×882 = exatamente 2× o bloco do desktop, mesma proporção 1,1066) — é
+ * a mesma composição, então ela é montada uma vez e encolhe proporcional.
+ * Um jogo de imagens serve os dois viewports.
+ *
+ * A foto sai da `rawImages` (a original enviada ao Figma), recortada no
+ * enquadramento que o nó usa. O export do nó viria achatado sobre branco
+ * (alfa 255 em todo o PNG) e com o raio assado na imagem — QA-017 e
+ * QA-027. Raio e forma verde ficam no CSS / no SVG.
+ */
+import Button from '../Button.astro';
+import RevealText from '../RevealText.astro';
+import JeitoSelo from '../icons/JeitoSelo.astro';
+import JeitoFolha from '../icons/JeitoFolha.astro';
+import { CTA_URL, CTA_LABEL, PRAZO_LONGO } from '../../data/site';
+
+/**
+ * Contorno da foto — Figma `6032:2619`. Não é retângulo arredondado: o canto
+ * inferior direito tem um degrau côncavo onde a forma verde se encaixa.
+ * Normalizado para `objectBoundingBox` (x ÷ 488, y ÷ 317,708), então
+ * acompanha qualquer tamanho da composição.
+ */
+const CLIP_FOTO =
+  'M0.9375 0H0.0625C0.02798 0 0 0.04298 0 0.096V0.904C0 0.95702 0.02798 1 0.0625 1H0.67839C0.7129 1 0.74089 0.95702 0.74089 0.904V0.78C0.74089 0.69164 0.78752 0.62 0.84505 0.62H0.9375C0.97202 0.62 1 0.57702 1 0.524V0.096C1 0.04298 0.97202 0 0.9375 0Z';
+---
+
+<section id="jeito-ardagh" class="section-y bg-surface">
+  <div class="container-lp">
+    <div class="grade">
+      <!-- Cabeçalho. No mobile abre a seção; no desktop abre a coluna direita. -->
+      <div class="cabecalho">
+        <p class="eyebrow" data-reveal>Nossa cultura</p>
+        <RevealText as="h2" class="h2 titulo" text="O jeito Ardagh de trabalhar." />
+      </div>
+
+      <!-- A figura. O wrapper leva o reveal; as peças de dentro levam o
+           parallax. Nunca os dois no mesmo elemento: liberar() limpa o
+           transform inline ao fim do reveal e mataria o parallax (QA-033). -->
+      <div class="figura" data-reveal>
+        <div class="composicao">
+          <img
+            src="/images/jeito-ardagh/foto-equipe.webp"
+            alt="Estagiárias da Ardagh Metal Packaging trabalhando juntas em um escritório"
+            width="976"
+            height="636"
+            loading="lazy"
+            decoding="async"
+            class="peca foto"
+          />
+
+          <!-- O contorno da foto no Figma (`6032:2619`) NÃO é um retângulo
+               arredondado: o canto inferior direito tem um degrau côncavo
+               onde a forma verde se encaixa, e é ele que cria o respiro
+               branco em volta do selo. Sem o recorte a foto passa por baixo
+               da forma e esse respiro some.
+
+               O path é o do Figma normalizado para `objectBoundingBox`
+               (cada x dividido por 488 e cada y por 317,708), então ele
+               acompanha qualquer tamanho da composição. -->
+          <svg class="sr-only" aria-hidden="true" focusable="false">
+            <clipPath id="jeito-recorte-foto" clipPathUnits="objectBoundingBox">
+              <path d={CLIP_FOTO}></path>
+            </clipPath>
+          </svg>
+
+          <!-- Forma verde, folha e prazo andam juntos: são um objeto só.
+               Por isso o parallax mora neste wrapper, e não em cada peça. -->
+          <div class="peca selo">
+            <!-- Os wrappers existem porque o <style> com escopo do Astro não
+                 carimba a raiz de um componente filho — ver QA-030. -->
+            <div class="forma"><JeitoSelo class="size-full" /></div>
+            <div class="folha"><JeitoFolha class="size-full" /></div>
+            <p class="prazo">
+              <span class="prazo-rotulo">inscrições abertas</span>
+              <span class="prazo-data">até {PRAZO_LONGO}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Corpo: texto, destaque, fecho e CTA -->
+      <div class="corpo">
+        <p class="body" data-reveal>
+          Aqui, inclusão, confiança, trabalho em equipe e excelência não são só palavras na
+          parede — são o que faz a gente confiar no potencial de quem está começando, sem
+          exigir que chegue com experiência pronta. A gente acredita que o sucesso do nosso
+          negócio depende do sucesso das nossas pessoas, e por isso investe em criar um
+          ambiente onde você pode aprender de verdade, com apoio de quem já está na estrada.
+        </p>
+
+        <p class="barra-destaque destaque" data-reveal>E onde você fica nisso tudo?</p>
+
+        <p class="body" data-reveal>
+          <strong>No centro.</strong> Assim como cada lata que sai da nossa fábrica carrega o
+          potencial de virar parte de uma marca reconhecida, cada pessoa que entra no Crescer
+          tem espaço pra construir a própria trajetória, ganhando forma no seu próprio ritmo.
+        </p>
+
+        <!-- No mobile o botão ocupa a largura toda, com a seta na borda
+             oposta (Figma 6033:4546 — `justify-between`); no desktop volta a
+             ser pílula justa. Mesmo jeito de OProgramaSection e
+             EtapasSection: utilitárias direto no Button, que valem na raiz do
+             componente filho — ao contrário de uma regra do <style> com
+             escopo, que não a alcançaria (QA-030). -->
+        <div class="cta w-full lg:w-auto" data-reveal>
+          <Button href={CTA_URL} seta bloco>
+            {CTA_LABEL}
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { parallax, revealOnScroll, revealWords } from '../../lib/motion';
+
+  // Quatro gestos, a receita do playbook: heading palavra a palavra, o resto
+  // do bloco entrando logo atrás, e o parallax como o detalhe que reforça o
+  // conteúdo — a foto fica para trás, o selo do prazo vem para a frente.
+  revealWords('#jeito-ardagh [data-reveal-words]');
+  revealOnScroll('#jeito-ardagh [data-reveal]', { atraso: 0.15 });
+
+  /* As duas peças leem o progresso da MESMA referência (#jeito-ardagh),
+     senão cada uma calcula o seu e elas desencontram.
+
+     `ancora: 'parado'` faz o deslocamento começar em zero: enquanto não há
+     rolagem — e no instante em que a seção entra pela borda de baixo — cada
+     peça está exatamente onde o Figma a colocou. É também o que torna o
+     teste do QA-032 verificável: com scrollY === 0 o transform tem que ser
+     `none`. O offset é o padrão de seção no meio da página; o do hero
+     (['start start', …]) só serve para bloco que já nasce visível.
+
+     Sinal: distância negativa atrasa a peça (ela desce, parece mais longe),
+     positiva adianta (ela sobe, parece mais perto). Números pequenos de
+     propósito — aqui o parallax é profundidade, não efeito. */
+  const comum = {
+    alvo: '#jeito-ardagh',
+    offset: ['start end', 'end start'],
+    ancora: 'parado',
+  } as const;
+
+  parallax('#jeito-ardagh .foto', { ...comum, distancia: -10 });
+  parallax('#jeito-ardagh .selo', { ...comum, distancia: 14 });
+</script>
+
+<style>
+  /* --- Grade ---
+     Mobile: uma coluna, cabeçalho → figura → corpo, gap 40.
+     Desktop: figura à esquerda ocupando as duas linhas, cabeçalho e corpo
+     à direita, colunas 488 + 80 + 648 e gap 32. */
+  .grade {
+    display: grid;
+    grid-template-areas:
+      'cabecalho'
+      'figura'
+      'corpo';
+    gap: 40px;
+  }
+
+  .cabecalho {
+    grid-area: cabecalho;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 16px;
+  }
+
+  .figura {
+    grid-area: figura;
+  }
+
+  .corpo {
+    grid-area: corpo;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 40px;
+  }
+
+  /* O h2 do mobile fecha em leading 1.2 (Figma 6033:4438) e não no 1.3 da
+     utilitária — são 4px em duas linhas, e é o que faz o bloco do cabeçalho
+     bater os 111px do desenho. `.titulo` sozinho NÃO pega: o <h2> é a raiz
+     do RevealText e não recebe o carimbo data-astro-cid deste arquivo
+     (QA-030). Ancorado em `.cabecalho`, que é do meu template, o escopo
+     continua valendo e não vaza. */
+  .cabecalho :global(.titulo) {
+    line-height: 1.2;
+  }
+
+  .body strong {
+    font-weight: 500;
+  }
+
+  /* Mesma forma do hero (verde) e de matéria-prima (azul): barra vertical
+     de 3px + 19px de respiro. Aqui a linha inteira é Medium. */
+  /* Estrutura em .barra-destaque (global.css); aqui só o que é desta seção. */
+  .destaque {
+    color: var(--color-brand);
+    font-weight: 500;
+  }
+
+  /* --- Composição ---
+     Bloco de 488×440,979. Todas as medidas abaixo são as do Figma divididas
+     por 488 e escritas em cqw, então a peça inteira encolhe proporcional e
+     serve o mobile sem um segundo jogo de imagens. */
+  .composicao {
+    /* Respiro entre a foto e a forma verde. No Figma as duas se encostam
+       (folga 0); o cliente pediu ar entre elas. 16px no desenho de 488 —
+       é o único número a mexer se quiser mais ou menos. */
+    --folga-selo: 3.279cqw;
+    position: relative;
+    width: 100%;
+    /* Teto no tamanho do desenho desktop, como no hero (628) e em
+       matéria-prima (399): entre 375 e 1024 a coluna é única e sem o teto a
+       composição — e com ela o corpo do selo, que está em cqw — cresceria
+       além do que o Figma documenta. */
+    max-width: 488px;
+    aspect-ratio: 488 / 440.979;
+    container-type: inline-size;
+  }
+
+  .peca {
+    position: absolute;
+    display: block;
+    max-width: none;
+  }
+
+  .foto {
+    left: 0;
+    top: 0;
+    width: 100cqw;
+    /* 317,708 do Figma menos o respiro pedido. Como o recorte é normalizado
+       pela caixa, o degrau sobe junto e o canal em volta do selo abre na
+       mesma proporção — o conjunto inteiro se afasta do verde. */
+    height: calc(65.104cqw - var(--folga-selo));
+    object-fit: cover;
+    /* O raio (30,5 no desenho) já vem dentro do path do recorte — por isso
+       não há `border-radius` aqui. */
+    clip-path: url(#jeito-recorte-foto);
+  }
+
+  /* Camada do selo: cobre o bloco inteiro e leva o parallax. Fica DEPOIS da
+     foto no DOM porque o lóbulo verde passa por cima do canto inferior
+     direito dela — é a ordem de pintura do Figma. */
+  .selo {
+    inset: 0;
+    color: var(--color-surface);
+  }
+
+  .forma {
+    position: absolute;
+    left: 0;
+    top: 44.271cqw;
+    width: 100cqw;
+    height: 46.094cqw;
+    color: var(--color-accent);
+  }
+
+  .folha {
+    position: absolute;
+    left: 83.197cqw;
+    top: 50.431cqw;
+    width: 11.885cqw;
+    height: 9.631cqw;
+  }
+
+  .prazo {
+    position: absolute;
+    left: 37.807cqw;
+    top: 73.074cqw;
+    translate: -50% 0;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1.3;
+  }
+
+  .prazo-rotulo {
+    font-weight: 400;
+    font-size: 3.689cqw;
+  }
+
+  .prazo-data {
+    font-weight: 500;
+    font-size: 6.557cqw;
+  }
+
+  @media (min-width: 1024px) {
+    .grade {
+      grid-template-areas:
+        'figura cabecalho'
+        'figura corpo';
+      grid-template-columns: 488px minmax(0, 1fr);
+      column-gap: 80px;
+      row-gap: 32px;
+      align-items: start;
+    }
+
+    .cabecalho,
+    .corpo {
+      gap: 32px;
+    }
+
+    .cabecalho :global(.titulo) {
+      line-height: 1.3;
+    }
+
+  }
+</style>

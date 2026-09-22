@@ -1,0 +1,145 @@
+# ardagh-hotsite
+
+Hotsite de página única do **Programa Crescer — Programa de Estágio Ardagh
+Metal Packaging 2027**. Realização Eureca.
+
+| | |
+|---|---|
+| Slug | `ardagh-hotsite` |
+| Marca | Ardagh Metal Packaging (AMP) — Programa Crescer |
+| Domínio | ⚠️ pendente |
+| Figma | `RXNF0LxVHITuN11JZwDpj2` — ver [docs/figma/MAPA.md](docs/figma/MAPA.md) |
+| Rotas | página única (`/`) |
+| Indexação | **noindex** até aprovação do cliente |
+| Prazo de inscrição | 05/11 |
+
+## Stack
+
+Astro 5 (static) + Tailwind v4 (`@theme` em `src/styles/global.css`) + Motion
+para animação. Ver [playbook/README.md](playbook/README.md).
+
+## Tipografia
+
+**Gotham Rounded**, servida do próprio domínio. Os OTFs entregues pelo cliente
+foram subsetados para Latin-1 mais a pontuação tipográfica do layout: 110 KB
+cada vira ~18 KB, 73 KB nos quatro pesos (Light 300, Book 400, Medium 500,
+Bold 700 — o limite do playbook). Sem itálico: o desenho não usa.
+
+Book e Medium são pré-carregados por aparecerem acima da dobra; Light e Bold
+chegam pelo CSS. Numa visita à home o navegador baixa **55,8 KB** de fonte.
+
+A VAG Rounded Std que aparece na faixa legal do Figma é resíduo do template da
+Eureca — o site é todo Gotham Rounded.
+
+### Política de quebra de linha — resolvida
+
+A regra de "deixar fluir" valeu enquanto a substituta estava no ar. Com a
+fonte real, as quebras voltaram sozinhas para onde o Figma as colocou, como
+previsto: as diferenças de altura caíram de até −78px para no máximo −9px.
+
+## Fases
+
+- [x] **0. Intake** — scaffold, 23 prints de referência, tokens, `site.ts`, `MAPA.md`, noindex
+- [x] **1. Header + Hero + Footer** — feito, aguardando sua revisão
+- [x] **2. Miolo** — as 9 seções feitas, aguardando revisão
+- [ ] **3. Pré-entrega** — [playbook/08-entrega.md](playbook/08-entrega.md)
+
+Inventário e status por seção: [docs/figma/MAPA.md](docs/figma/MAPA.md).
+
+## Ritmo combinado
+
+Cada seção é feita **uma vez**, entregue para o cliente revisar e testar, e só
+depois do OK seguimos para a próxima. Se durante um ajuste aparecer que a seção
+inteira está fora do design, **avisar e perguntar** antes de reabrir o loop
+completo — não escalar por conta própria.
+
+## Pendências
+
+Todas estão marcadas como `PENDÊNCIA` no código, no ponto exato onde entram.
+
+| # | O que falta | Onde entra | Bloqueia |
+|---|---|---|---|
+| 1 | URL da página de inscrição (ATS) | `CTA_URL` em `src/data/site.ts` | nada — o botão existe, o destino é `#` |
+| — | ~~Arquivos da Gotham Rounded~~ | ✅ 4 pesos servidos do próprio domínio |
+| — | ~~URLs das 3 redes~~ | ✅ Instagram, LinkedIn e site institucional |
+| 4 | URL da política de privacidade | `LEGAL_LINKS` | nada |
+| 5 | Domínio final | `SITE_URL` | canonical, OG e sitemap na pré-entrega |
+| 6 | Confirmar o crédito "Desenvolvido por Maatz" do rodapé | `public/images/footer/maatz-branco.svg` | nada — veio do Figma |
+| 7 | Imagem OG 1200×630 | `public/og.jpg` | pré-entrega |
+| — | ~~Favicon~~ | ✅ marca AMP, em .ico + 32/192/512 + apple-touch |
+| 8 | Remote do GitHub | — | nada |
+| 9 | **Contraste da paleta reprova na WCAG AA** | decisão de design | nota de Acessibilidade abaixo da meta |
+| — | ~~Confirmar as 2 unidades~~ | ✅ confirmado pelo cliente: São Paulo/SP e Jacareí/SP |
+
+## Contraste — decisão registrada
+
+A paleta do Figma reprova na WCAG AA em três frentes. Medido:
+
+| combinação | onde | contraste | exigido |
+|---|---|---|---|
+| verde `#4bcb60` sobre fundo claro | eyebrow, palavras de destaque | 1,80–2,10:1 | 4,5:1 |
+| branco sobre verde | tarja corrida | 2,10:1 | 4,5:1 |
+| branco sobre azul `#0099d8` | todos os botões, aba ativa | 3,21:1 | 4,5:1 |
+
+O botão é o mais grave: 18px peso 500 não conta como "texto grande", então o
+alvo é 4,5:1. **Decisão do cliente: manter fiel ao Figma.** A nota de
+Acessibilidade do Lighthouse vai ficar abaixo dos 95 do playbook por causa
+disto, e não por defeito de implementação.
+
+Se um dia for corrigido, a mudança é de token e não de seção: bastaria um
+`--color-accent-text` (~`#267a31`, 4,6:1 sobre a pílula) para o verde quando
+é texto, e escurecer `--color-brand` nos botões.
+
+## Dívida de sistema de design
+
+Levantada pelos agentes seção a seção. A regra do playbook é: apareceu 2×
+com o mesmo estilo, vira utilitária. Estes já passaram disso.
+
+| # | O que falta | Ocorrências | Situação |
+|---|---|---|---|
+| 1 | `.barra-destaque` (barra vertical + frase) | 3 | ✅ **promovida** — estrutural, com `currentColor` |
+| 2 | `.h2` com leading 1.2 no mobile | 2 | ✅ **corrigida no token** |
+| 3 | `.body-lg` — 18px / 1.3 | 4 | ✅ **promovida** — `beneficios` abre para 1.5 e sobrescreve |
+| 4 | `.h4` — 20px / 500 / 1.3, título de card | 3 | ✅ **promovida** |
+| 5 | `--radius-box: 24px` | 3 | ✅ **promovido a token** |
+| 6 | `Button` com prop `bloco` | 4 | ✅ **promovida** — 327px com as pontas separadas no mobile, 257px centrado no desktop |
+| 7 | `ativoPorLeitura()` no `lib/motion.ts` | 3 scrollspies | ⬜ header, abas e etapas repetem a ideia |
+| 8 | `chacoalhar()` no `lib/motion.ts` | 1 | ⬜ os 6 valores do balanço estão à mão |
+| 9 | `.eyebrow-on-dark` (branco 15% sobre azul) | 1 | ⬜ local, ainda é exceção |
+
+Os 7 e 8 são generalização de comportamento e só compensam se um próximo
+projeto pedir o mesmo — generalizar com uma ocorrência é chute.
+
+O que sobra de repetição é exceção legítima, não dívida: o título do item de
+etapas (18px/500, outro papel), o valor da bolsa (20px/700) e a pílula de aba
+(20px/400).
+
+## Política de quebra de linha
+
+Onde a Nunito faz um título caber em menos linhas que o Figma, **deixamos
+fluir**. Conferido nó a nó: os títulos do Figma são um único nó de texto, sem
+quebra autoral — as duas linhas do desenho são quebra natural da Gotham
+Rounded. Forçar `<br>` seria compensar a fonte, e a quebra forçada viraria
+defeito no dia em que os `.woff2` chegarem.
+
+## Inconsistências do Figma a confirmar com o cliente
+
+1. **São Paulo aparece em duas versões.** O mock mobile diz "Transporte
+   fretado*" com a nota "Conforme as linhas contratadas pela Ardagh"; o painel
+   canônico (`6100:10`, e o que o desktop exibe) diz "Transporte Flex*" com
+   "Conforme regras e elegibilidade do benefício". Adotamos a segunda.
+2. ~~**São duas unidades, não quatro.**~~ **Confirmado pelo cliente:** o
+   programa tem só São Paulo/SP e Jacareí/SP. Alagoinhas (`6033:4749`) e
+   Manaus (`6033:4977`) estão `hidden` no Figma por serem versões anteriores.
+
+`SITE_URL` está propositalmente em `https://exemplo.com.br`: o grep de
+pré-entrega quebra enquanto estiver assim, então não tem como ir para produção
+sem o domínio real.
+
+## Assets
+
+Prints de referência do Figma (23 arquivos, desktop e mobile de cada seção):
+`docs/reference/`. Prints do projeto para comparação: `docs/local/`.
+
+Fotos e vetores são extraídos por seção, no momento em que a seção é
+construída, e vão para `public/images/<id-da-secao>/` em WebP.

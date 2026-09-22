@@ -1,0 +1,504 @@
+---
+/**
+ * Locais e benefícios — Figma `6030:1821` (desktop 1440×983) e `6032:3835`
+ * (mobile 375×1855). O conteúdo das quatro unidades vem de `6100:10`.
+ *
+ * Uma estrutura só para os dois comportamentos:
+ *   · ≥1024 — abas ARIA de verdade (`tablist`/`tab`/`tabpanel`), um painel
+ *     por vez, setas nas pontas do cartão;
+ *   · <1024 — os quatro painéis lado a lado num trilho com `scroll-snap`,
+ *     navegável por dedo, pelas mesmas abas (que passam a rolar na
+ *     horizontal, porque quatro pílulas não cabem em 327), pela seta e pelos
+ *     quatro indicadores.
+ *
+ * O estado ativo é UM só, sempre em atributo — `aria-selected`, `data-ativo`
+ * e `aria-current`. Nenhuma classe de cor é alternada por JS (QA-024).
+ *
+ * Movimento: três gestos no total, não por aba. O heading entra palavra a
+ * palavra, o subtítulo entra com atraso curto e a grade do PRIMEIRO painel
+ * entra em cascata. Trocar de aba não re-dispara nada — só o primeiro painel
+ * carrega `data-reveal-stagger`.
+ */
+import RevealText from '../RevealText.astro';
+import Seta from '../icons/Seta.astro';
+import PainelUnidade from './beneficios/PainelUnidade.astro';
+import { UNIDADES } from '../../data/locais';
+---
+
+<section id="beneficios" class="section-y bg-surface" aria-labelledby="beneficios-titulo">
+  <div class="container-lp conteudo">
+    <!-- <header> de seção, que é o elemento correto para isto. Já foi um
+         <div>: os scripts de captura escondiam qualquer `header` para tirar
+         o header fixo da frente, e apagavam este junto. A regra hoje está
+         escopada em `body > header` — ver QA-034. -->
+    <header class="cabecalho">
+      <div class="cabecalho-topo">
+        <p class="eyebrow">Benefícios</p>
+        <!-- A raiz do RevealText é um componente filho: o <style> com escopo
+             não a marca, então as regras vêm ancoradas neste wrapper.
+             Ver playbook/09-qa-erros-comuns.md#qa-030 -->
+        <div class="titulo">
+          <RevealText
+            as="h2"
+            id="beneficios-titulo"
+            class="h2"
+            text="Seu desenvolvimento |**vem** **com** **apoio.**"
+          />
+        </div>
+      </div>
+
+      <p class="body-lg subtitulo" data-reveal>
+        No Programa Crescer, você conta com bolsa-auxílio, benefícios para o dia a dia e
+        iniciativas que apoiam sua jornada dentro e fora do trabalho.
+      </p>
+    </header>
+
+    <!-- A fita rola na horizontal no mobile. Não leva `tabindex`: ela já
+         contém elementos focáveis (as abas), que é o que a regra
+         `scrollable-region-focusable` pede. -->
+    <div class="fita-abas" data-fita-abas>
+      <div class="abas" role="tablist" aria-label="Unidades da Ardagh Metal Packaging">
+        {
+          UNIDADES.map((u, i) => (
+            <button
+              type="button"
+              role="tab"
+              class="aba"
+              id={`aba-${u.id}`}
+              aria-controls={`painel-${u.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+            >
+              {u.nome}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="palco">
+      <!-- QA-019: região rolável precisa de foco e de nome. -->
+      <div
+        class="trilho"
+        data-trilho
+        tabindex="0"
+        role="group"
+        aria-roledescription="carrossel"
+        aria-label={`Benefícios por unidade — ${UNIDADES.length} painéis`}
+      >
+        {
+          UNIDADES.map((u, i) => (
+            <PainelUnidade unidade={u} ativo={i === 0} comReveal={i === 0} />
+          ))
+        }
+      </div>
+
+      <button type="button" class="seta seta-ant" data-seta="anterior" aria-label="Unidade anterior">
+        <Seta />
+      </button>
+      <button type="button" class="seta seta-prox" data-seta="proximo" aria-label="Próxima unidade">
+        <Seta />
+      </button>
+
+      <div class="pontos">
+        {
+          UNIDADES.map((u, i) => (
+            <button
+              type="button"
+              class="ponto"
+              data-ponto
+              aria-current={i === 0 ? 'true' : 'false'}
+              aria-label={`Ver benefícios de ${u.nome}`}
+            >
+              <span class="pilula" />
+            </button>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { revealWords, revealOnScroll, revealStagger } from '../../lib/motion';
+  import { iniciarAbasBeneficios } from '../../scripts/beneficios-abas';
+
+  revealWords('#beneficios [data-reveal-words]');
+  revealOnScroll('#beneficios [data-reveal]', { atraso: 0.15 });
+  revealStagger('#beneficios [data-reveal-stagger]');
+
+  const raiz = document.querySelector<HTMLElement>('#beneficios');
+  if (raiz) iniciarAbasBeneficios(raiz);
+</script>
+
+<style>
+  .conteudo {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* ---------- Cabeçalho ---------- */
+
+  .cabecalho {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .cabecalho-topo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  /* Nesta seção o eyebrow é MAIOR no mobile (16) que no desktop (14) — o
+     inverso da escala global. Medido nos dois nós. */
+  .eyebrow {
+    font-size: 16px;
+  }
+
+  .titulo :global(.h2) {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  /* Estrutura em .body-lg; aqui só o leading que esta seção abre. */
+  .subtitulo {
+    line-height: 1.5;
+  }
+
+  /* ---------- Abas ---------- */
+
+  .fita-abas {
+    /* Sangra até a borda da tela para a fita não parecer cortada na margem. */
+    margin-inline: -24px;
+    padding-inline: 24px;
+    /* QA-023: um eixo diferente de `visible` tira o `visible` do outro. A
+       folga vertical devolve espaço ao anel de foco das pílulas. */
+    padding-block: 6px;
+    margin-block: -6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .fita-abas::-webkit-scrollbar {
+    display: none;
+  }
+
+  .abas {
+    display: flex;
+    width: max-content;
+    gap: 20px;
+    /* Centraliza quando cabe; encosta no início quando transborda. */
+    margin-inline: auto;
+  }
+
+  .aba {
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: transparent;
+    padding: 12px 16px;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--color-ink);
+    white-space: nowrap;
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease;
+  }
+
+  /* O ativo mora numa regra própria, chaveada no atributo — nada de duas
+     utilitárias disputando `background`. QA-024. */
+  .aba[aria-selected='true'] {
+    background: var(--color-brand);
+    border-color: transparent;
+    color: var(--color-surface);
+    font-weight: 500;
+  }
+
+  /* ---------- Palco: trilho, setas e indicadores ---------- */
+
+  .palco {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    --seta-y: 50%;
+  }
+
+  .trilho {
+    display: flex;
+    gap: 40px;
+    overflow-x: auto;
+    /* Sangra até a borda real da tela. Sem isso o recorte do overflow
+       acontece na caixa de conteúdo, 24px para dentro, e o card seguinte
+       aparece "cortado" em vez de entrar pela lateral do navegador. O
+       padding devolve o alinhamento com a grade, e o scroll-padding faz o
+       snap parar no mesmo lugar. */
+    margin-inline: -24px;
+    padding-inline: 24px;
+    scroll-padding-inline: 24px;
+
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    /* QA-023 de novo: o trilho recorta na vertical, e a borda de baixo do
+       cartão (e o anel de foco) some. A folga volta pela margem negativa. */
+    padding-block: 8px;
+    margin-block: -8px;
+  }
+
+  .trilho::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* `.painel` é a raiz de um componente filho: sem o `:global` a regra não
+     alcançaria (QA-030). Ancorado em `.trilho`, não vaza. */
+  .trilho > :global(.painel) {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .seta {
+    position: absolute;
+    top: var(--seta-y);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 100px;
+    background: var(--color-brand);
+    color: var(--color-surface);
+    opacity: 1;
+    scale: 1;
+    transition:
+      background-color 200ms ease,
+      transform 200ms ease,
+      opacity 220ms ease,
+      scale 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      translate 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      /* Ao APARECER a visibilidade volta no mesmo quadro, senão o fade
+         aconteceria com o botão ainda escondido. */
+      visibility 0s linear 0s;
+  }
+
+  .seta-ant {
+    left: 0;
+    translate: -50% -50%;
+  }
+
+  .seta-ant :global(svg) {
+    rotate: 180deg;
+  }
+
+  .seta-prox {
+    right: 0;
+    translate: 50% -50%;
+  }
+
+  .seta :global(svg) {
+    display: block;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Nas pontas a seta some, como no Figma (o botão "anterior" está oculto no
+     nó `6034:5198` porque a primeira aba é a ativa). Ela sai encolhendo para
+     fora do painel, do lado para onde aponta — some "indo embora" em vez de
+     piscar. A `visibility` continua desligada no fim para o botão sair também
+     da árvore de acessibilidade; o atraso segura isso até o fade terminar. */
+  .seta:disabled {
+    visibility: hidden;
+    opacity: 0;
+    scale: 0.7;
+    transition:
+      opacity 200ms ease,
+      scale 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      translate 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 240ms;
+  }
+
+  .seta-ant:disabled {
+    translate: calc(-50% - 12px) -50%;
+  }
+
+  .seta-prox:disabled {
+    translate: calc(50% + 12px) -50%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* O matador global zera a duração, mas não o atraso da visibility —
+       sem isto a seta ficaria 240ms em cena antes de sumir. */
+    .seta:disabled {
+      transition-delay: 0s;
+    }
+  }
+
+  .pontos {
+    align-self: center;
+    display: flex;
+    height: 8px;
+    gap: 6px;
+  }
+
+  /* A pílula tem 8px de altura, mas o alvo de toque tem 44 de altura e
+     26 de largura — sem encostar no vizinho (a folga lateral é metade do
+     gap de 6). */
+  .ponto {
+    display: flex;
+    align-items: center;
+    padding: 18px 3px;
+    margin: -18px -3px;
+    background: none;
+    border: 0;
+  }
+
+  .pilula {
+    display: block;
+    height: 8px;
+    width: 20px;
+    border-radius: 100px;
+    background: var(--color-accent);
+    opacity: 0.3;
+    transition:
+      width 250ms ease,
+      opacity 250ms ease;
+  }
+
+  .ponto[aria-current='true'] .pilula {
+    width: 36px;
+    opacity: 1;
+  }
+
+  /* ---------- Desktop ---------- */
+
+  @media (min-width: 1024px) {
+    .conteudo {
+      gap: 64px;
+    }
+
+    .cabecalho {
+      gap: 16px;
+    }
+
+    .cabecalho-topo {
+      align-items: center;
+    }
+
+    .eyebrow {
+      font-size: 14px;
+    }
+
+    .titulo :global(.h2) {
+      font-size: 36px;
+      text-align: center;
+    }
+
+    /* A quebra depois de "desenvolvimento" é só do mobile: no desktop o
+       heading cabe em uma linha (686px no Figma). */
+    .titulo :global(br) {
+      display: none;
+    }
+
+    .subtitulo {
+      max-width: 800px;
+      margin-inline: auto;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .fita-abas {
+      margin-inline: 0;
+      padding-inline: 0;
+      overflow-x: visible;
+    }
+
+    .palco {
+      /* O Figma põe a seta 13px acima do centro do cartão (topo em 626,1 num
+         painel que vai de 447 a 883). Em porcentagem o desvio acompanha
+         painéis de outra altura em vez de quebrar. */
+      --seta-y: 47%;
+    }
+
+    .trilho {
+      gap: 0;
+      overflow-x: visible;
+      scroll-snap-type: none;
+      /* No desktop não há rolagem: o trilho volta para dentro da grade. */
+      margin-inline: 0;
+      padding-inline: 0;
+      /* O painel também troca por arrasto lateral. */
+      cursor: grab;
+    }
+
+    .trilho.arrastando {
+      cursor: grabbing;
+      /* Herda para os filhos, inclusive a raiz do componente do painel. */
+      user-select: none;
+    }
+
+    .seta {
+      width: 52px;
+      height: 52px;
+    }
+
+    .seta :global(svg) {
+      width: 24px;
+      height: 24px;
+    }
+
+    .pontos {
+      display: none;
+    }
+  }
+
+  /* ---------- Hover ----------
+     Dentro de @media (hover: hover) para não grudar no toque. QA-018. */
+
+  @media (hover: hover) and (pointer: fine) {
+    .aba:hover {
+      border-color: var(--color-brand);
+      color: var(--color-brand);
+    }
+
+    .aba[aria-selected='true']:hover {
+      background: var(--color-brand-dark);
+      border-color: transparent;
+      color: var(--color-surface);
+    }
+
+    .seta:hover {
+      background: var(--color-brand-dark);
+    }
+
+    .ponto:hover .pilula {
+      opacity: 0.6;
+    }
+
+    .ponto[aria-current='true']:hover .pilula {
+      opacity: 1;
+    }
+  }
+
+  .seta:active {
+    transform: scale(0.94);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trilho {
+      scroll-behavior: auto;
+    }
+
+    .pilula,
+    .aba,
+    .seta {
+      transition: none;
+    }
+  }
+</style>

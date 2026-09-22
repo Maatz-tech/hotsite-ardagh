@@ -1,0 +1,285 @@
+---
+/**
+ * Drawer de formulário — o padrão do template para captura de lead.
+ *
+ * Mobile: bottom sheet. Sobe de baixo, arrasta para baixo para fechar, sem X.
+ * Desktop: entra pela direita, altura toda da tela, cantos arredondados.
+ * Nos dois: cabeçalho e rodapé fixos, só o miolo rola. O botão de envio mora
+ * no rodapé e nunca sai da tela — num formulário longo, o CTA sumir abaixo da
+ * dobra é a forma mais barata de perder conversão.
+ *
+ * É um <dialog> de propósito: modalidade, foco preso dentro, Esc e clique no
+ * backdrop vêm prontos do navegador. Reimplementar isso à mão é onde a maioria
+ * dos modais quebra em acessibilidade.
+ *
+ * Uso:
+ *   <FormDrawer titulo="Fale com a gente" eyebrow="Orçamento" enviarLabel="Enviar">
+ *     <MeusCampos />
+ *     <Fragment slot="rodape">Texto legal opcional abaixo do botão.</Fragment>
+ *   </FormDrawer>
+ *
+ * Abre com qualquer elemento que case com `gatilho` (padrão: `[data-drawer]`
+ * e links para `#contato`).
+ */
+interface Props {
+  /** id do <dialog>; troque se houver mais de um drawer na mesma página */
+  id?: string;
+  titulo: string;
+  eyebrow?: string;
+  enviarLabel?: string;
+  /** seletor dos elementos que abrem o drawer */
+  gatilho?: string;
+  /** vira `data-form` no <form>, para o backend identificar a origem */
+  nome?: string;
+  /** destino do POST — trocar por endpoint real antes de entregar */
+  action?: string;
+}
+
+const {
+  id = 'form-drawer',
+  titulo,
+  eyebrow,
+  enviarLabel = 'Enviar',
+  gatilho = '[data-drawer], a[href="#contato"]',
+  nome = 'contato',
+  action = '#',
+} = Astro.props;
+
+const tituloId = `${id}-titulo`;
+---
+
+<dialog id={id} aria-labelledby={tituloId} class="fdrawer" data-gatilho={gatilho}>
+  <form class="flex min-h-0 flex-1 flex-col" action={action} method="post" data-form={nome}>
+    <!-- Cabeçalho: no mobile é também a alça de arraste -->
+    <header data-fd-handle class="shrink-0 px-6 pb-5 pt-3 sm:px-10 sm:pb-6 sm:pt-8">
+      <span
+        class="mx-auto mb-5 block h-1 w-10 rounded-full bg-ink-08 sm:hidden"
+        aria-hidden="true"></span>
+      <div class="flex flex-col gap-2">
+        {eyebrow && (
+          <p class="text-sm font-semibold uppercase tracking-wide text-brand">{eyebrow}</p>
+        )}
+        <h2 id={tituloId} class="text-[26px] font-semibold leading-[1.3] text-ink sm:text-[28px]">
+          {titulo}
+        </h2>
+      </div>
+    </header>
+
+    <!-- Miolo rolável -->
+    <div data-fd-scroll class="fdrawer-scroll min-h-0 flex-1 overflow-y-auto px-6 pb-6 sm:px-10">
+      <slot />
+    </div>
+
+    <!-- Rodapé fixo. `data-sombra` entra enquanto houver conteúdo abaixo da
+         dobra: é o aviso de que ainda há formulário para rolar. -->
+    <footer
+      data-fd-footer
+      class="shrink-0 border-t border-ink-08 bg-surface px-6 py-5 transition-shadow sm:px-10 sm:pb-8 data-[sombra]:shadow-[0_-12px_20px_-12px_rgb(15_23_42_/_0.25)]"
+    >
+      <button type="submit" class="btn btn-primary w-full justify-center">
+        {enviarLabel}
+      </button>
+      <slot name="rodape" />
+    </footer>
+  </form>
+</dialog>
+
+<style>
+  /* ---------- Caixa ---------- */
+  /* O <dialog> é o container flex, não o <form>.
+     Com `height: auto` + `max-height`, um `height: 100%` no filho resolve
+     contra altura indefinida e não constrange nada: o form crescia até o
+     tamanho do conteúdo e vazava para fora da caixa, em vez de o miolo rolar.
+     Sendo o próprio dialog o flex container, o `flex: 1; min-height: 0` do
+     form passa a ser limitado pelo max-height. */
+  .fdrawer[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .fdrawer {
+    max-width: none;
+    max-height: none;
+    border: 0;
+    padding: 0;
+    background: var(--color-surface);
+    /* Bottom sheet: `auto` nas margens de cima empurra a folha para o rodapé. */
+    margin: auto auto 0;
+    width: 100%;
+    height: auto;
+    max-height: 92dvh;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    box-shadow: 0 -8px 40px rgb(15 23 42 / 0.18);
+  }
+  .fdrawer::backdrop {
+    background: rgb(15 23 42 / 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  @media (min-width: 640px) {
+    .fdrawer {
+      /* Drawer lateral: encostado à direita, altura inteira. */
+      margin: 0 0 0 auto;
+      width: 520px;
+      height: 100dvh;
+      max-height: 100dvh;
+      border-radius: var(--radius-card) 0 0 var(--radius-card);
+      box-shadow: -8px 0 40px rgb(15 23 42 / 0.18);
+    }
+  }
+
+  /* ---------- Barra de rolagem discreta ---------- */
+  .fdrawer-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-40) transparent;
+    overscroll-behavior: contain;
+  }
+  .fdrawer-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .fdrawer-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .fdrawer-scroll::-webkit-scrollbar-thumb {
+    background: var(--color-ink-40);
+    border-radius: var(--radius-pill);
+  }
+
+  /* ---------- Entrada e saída ---------- */
+  .fdrawer,
+  .fdrawer::backdrop {
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+      overlay 0.3s ease allow-discrete, display 0.3s ease allow-discrete;
+  }
+  .fdrawer {
+    transform: translateY(100%);
+  }
+  .fdrawer[open] {
+    transform: translateY(0);
+  }
+  @starting-style {
+    .fdrawer[open] {
+      transform: translateY(100%);
+    }
+  }
+  .fdrawer::backdrop {
+    opacity: 0;
+  }
+  .fdrawer[open]::backdrop {
+    opacity: 1;
+  }
+  @starting-style {
+    .fdrawer[open]::backdrop {
+      opacity: 0;
+    }
+  }
+  @media (min-width: 640px) {
+    .fdrawer {
+      transform: translateX(100%);
+    }
+    .fdrawer[open] {
+      transform: translateX(0);
+    }
+    @starting-style {
+      .fdrawer[open] {
+        transform: translateX(100%);
+      }
+    }
+  }
+
+  /* Durante o arraste a transição sai do caminho: o dedo comanda a posição. */
+  .fdrawer[data-arrastando] {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fdrawer,
+    .fdrawer::backdrop {
+      transition: opacity 0.2s ease;
+      transform: none;
+    }
+    .fdrawer[open] {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLDialogElement>('dialog.fdrawer').forEach((drawer) => {
+    const scroll = drawer.querySelector<HTMLElement>('[data-fd-scroll]');
+    const footer = drawer.querySelector<HTMLElement>('[data-fd-footer]');
+    const handle = drawer.querySelector<HTMLElement>('[data-fd-handle]');
+
+    // Sombra do rodapé enquanto sobrar formulário abaixo da dobra.
+    const sincronizarSombra = () => {
+      if (!scroll || !footer) return;
+      const restante = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight;
+      footer.toggleAttribute('data-sombra', restante > 4);
+    };
+    scroll?.addEventListener('scroll', sincronizarSombra, { passive: true });
+    if (scroll) new ResizeObserver(sincronizarSombra).observe(scroll);
+
+    const gatilho = drawer.dataset.gatilho;
+    if (gatilho) {
+      document.querySelectorAll(gatilho).forEach((el) =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          drawer.showModal();
+          sincronizarSombra();
+        })
+      );
+    }
+
+    // Clique no backdrop fecha: o <form> ocupa a caixa toda, então um clique
+    // que chega no próprio <dialog> só pode ter vindo de fora dela.
+    drawer.addEventListener('click', (e) => {
+      if (e.target === drawer) drawer.close();
+    });
+
+    // ---- Arrastar para baixo para fechar (só no bottom sheet) ----
+    const ehSheet = () => window.matchMedia('(max-width: 639px)').matches;
+    let arrastando = false;
+    let yInicial = 0;
+    let deslocamento = 0;
+    let tInicial = 0;
+
+    handle?.addEventListener('pointerdown', (e) => {
+      if (!ehSheet()) return;
+      arrastando = true;
+      yInicial = e.clientY;
+      deslocamento = 0;
+      tInicial = performance.now();
+      handle.setPointerCapture(e.pointerId);
+      drawer.setAttribute('data-arrastando', '');
+    });
+
+    handle?.addEventListener('pointermove', (e) => {
+      if (!arrastando) return;
+      // Só para baixo: puxar para cima não estica a folha.
+      deslocamento = Math.max(0, e.clientY - yInicial);
+      drawer.style.transform = `translateY(${deslocamento}px)`;
+    });
+
+    const soltar = (e: PointerEvent) => {
+      if (!arrastando) return;
+      arrastando = false;
+      drawer.removeAttribute('data-arrastando');
+      drawer.style.transform = '';
+      try {
+        handle?.releasePointerCapture(e.pointerId);
+      } catch {
+        /* o navegador pode já ter liberado o ponteiro */
+      }
+      // Fecha por distância (1/4 da folha) ou por velocidade, para um flick
+      // curto também funcionar.
+      const velocidade = deslocamento / Math.max(1, performance.now() - tInicial);
+      if (deslocamento > drawer.offsetHeight * 0.25 || velocidade > 0.6) drawer.close();
+    };
+    handle?.addEventListener('pointerup', soltar);
+    handle?.addEventListener('pointercancel', soltar);
+
+    drawer.addEventListener('close', () => {
+      drawer.style.transform = '';
+      drawer.removeAttribute('data-arrastando');
+    });
+  });
+</script>

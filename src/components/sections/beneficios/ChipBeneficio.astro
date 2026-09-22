@@ -1,0 +1,93 @@
+---
+/**
+ * Chip de um benefício — Figma `6100:28` e irmãos.
+ *
+ * Informativo, não clicável: por isso não tem `.card-interactive` nem hover
+ * (ver playbook/06-micro-interacoes.md — hover em coisa não clicável é ruído).
+ *
+ * No desktop o texto é `nowrap` e os chips se acomodam por `flex-wrap`, o que
+ * reproduz exatamente as três fileiras do Figma. No mobile cada chip ocupa
+ * uma linha e os dois maiores (PAC e Idiomas) quebram o texto em duas —
+ * também como no Figma.
+ */
+import type { IconeBeneficio } from '../../../data/locais';
+import BenSaude from '../../icons/BenSaude.astro';
+import BenVida from '../../icons/BenVida.astro';
+import BenRefeicao from '../../icons/BenRefeicao.astro';
+import BenTransporte from '../../icons/BenTransporte.astro';
+import BenEstacionamento from '../../icons/BenEstacionamento.astro';
+import BenWellhub from '../../icons/BenWellhub.astro';
+import BenPac from '../../icons/BenPac.astro';
+import BenIdiomas from '../../icons/BenIdiomas.astro';
+
+interface Props {
+  icone: IconeBeneficio;
+  rotulo: string;
+  nota?: '*' | '**';
+}
+
+const { icone, rotulo, nota } = Astro.props;
+
+const ICONES = {
+  saude: BenSaude,
+  vida: BenVida,
+  refeicao: BenRefeicao,
+  transporte: BenTransporte,
+  estacionamento: BenEstacionamento,
+  wellhub: BenWellhub,
+  pac: BenPac,
+  idiomas: BenIdiomas,
+} as const;
+
+const Icone = ICONES[icone];
+---
+
+<li class="chip">
+  <Icone />
+  <p class="chip-rotulo">
+    {rotulo}{nota && <span class="chip-nota">{nota}</span>}
+  </p>
+</li>
+
+<style>
+  .chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    /* Figma: rgba(5,110,183,.06) — o azul da faixa do rodapé a 6%.
+       Derivado do token, para não entrar hex aqui. */
+    background: color-mix(in srgb, var(--color-brand-band) 6%, transparent);
+    border-radius: 40px;
+    padding: 8px 14px;
+    max-width: 100%;
+  }
+
+  /* QA-030: o <style> com escopo não marca a raiz de um componente filho.
+     Ancorado no .chip o :global não vaza. */
+  .chip :global(svg) {
+    display: block;
+    width: 24px;
+    height: 24px;
+    flex: none;
+    color: var(--color-brand);
+  }
+
+  .chip-rotulo {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--color-ink-body);
+  }
+
+  /* O asterisco sai em peso mais leve que o rótulo, como no Figma. */
+  .chip-nota {
+    font-weight: 400;
+  }
+
+  @media (min-width: 1024px) {
+    .chip-rotulo {
+      white-space: nowrap;
+    }
+  }
+</style>

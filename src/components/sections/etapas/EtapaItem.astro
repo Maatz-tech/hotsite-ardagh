@@ -1,0 +1,190 @@
+---
+/**
+ * Uma etapa da lista — Figma "Benefit Content" 6032:2680/2944/2966/2976
+ * (desktop) e 6033:4406/4413/4419/4425 (mobile).
+ *
+ * O trilho cinza é a borda esquerda do próprio item: quatro itens colados
+ * desenham a linha inteira, sem elemento extra. O trecho azul do item ativo é
+ * o `::before` — 2px por 85px, centrado na altura do item, exatamente como o
+ * "Line 11" do Figma (que mora dentro do primeiro item, não do container).
+ *
+ * ESTADO: tudo pendurado em `[data-ativo]`, atributo que o script da seção
+ * liga e desliga. Cor e inclinação moram em regras próprias chaveadas nele —
+ * nunca em duas utilitárias disputando a mesma propriedade (QA-024).
+ */
+import EtapaLatinha from '../../icons/EtapaLatinha.astro';
+import type { Etapa } from '../../../data/etapas';
+
+interface Props {
+  etapa: Etapa;
+  /** Só a primeira nasce ativa — é o estado que o Figma documenta. */
+  ativo?: boolean;
+}
+
+const { etapa, ativo = false } = Astro.props;
+---
+
+<li
+  class="etapa flex items-center gap-6 py-4 pl-4 lg:gap-8 lg:px-8 lg:py-5"
+  data-etapa
+  data-ativo={ativo ? '' : undefined}
+>
+  {/* Caixa do tamanho do container do Figma. A lata gira DENTRO dela e
+      transborda sem empurrar nada — se a caixa crescesse junto com a
+      inclinação, a lista inteira se reorganizaria a cada rolagem. */}
+  <span class="caixa-lata flex shrink-0 items-center justify-center">
+    <EtapaLatinha numero={etapa.numero} />
+  </span>
+
+  <div class="flex min-w-0 flex-1 flex-col gap-2 lg:gap-3.5">
+    <p class="quando">
+      <span class="lg:hidden">{etapa.quandoCurto}</span>
+      <span class="hidden lg:inline">{etapa.quando}</span>
+    </p>
+    <h3 class="titulo">{etapa.titulo}</h3>
+  </div>
+</li>
+
+<style>
+  .etapa {
+    position: relative;
+    border-inline-start: 1px solid var(--color-line);
+  }
+
+  /* Trecho azul do trilho. Nasce achatado e cresce a partir do meio — some
+     pelo mesmo caminho quando a etapa deixa de ser a ativa. */
+  .etapa::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: -1px;
+    top: 50%;
+    width: 2px;
+    height: 85px;
+    translate: 0 -50%;
+    background: var(--color-brand);
+    scale: 1 0;
+    transition: scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .etapa[data-ativo]::before {
+    scale: 1 1;
+  }
+
+  /* --- Caixa e lata --- */
+  .caixa-lata {
+    width: 38px;
+    height: 48px;
+  }
+
+  /* `.lata` como classe no componente filho NÃO pegaria: a raiz renderizada
+     por um filho não recebe o carimbo data-astro-cid deste arquivo. O
+     :global ancorado em `.caixa-lata`, que é do meu template, resolve sem
+     vazar. Ver QA-030. */
+  .caixa-lata :global(svg) {
+    display: block;
+    width: 27.055px;
+    height: 48px;
+    color: var(--color-line);
+    rotate: 0deg;
+    transition:
+      color 250ms ease,
+      rotate 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* O repouso do estado ativo é a inclinação do desenho: 15deg medidos no
+     Figma. O balanço abaixo só é o CAMINHO até ela. */
+  .etapa[data-ativo] .caixa-lata :global(svg) {
+    color: var(--color-brand);
+    rotate: 15deg;
+    animation: chacoalhar 700ms;
+  }
+
+  /* Balanço amortecido: passa de 15, volta, e vai fechando a amplitude até
+     parar na inclinação do desenho — +6°, −4,4°, +2,8°, −1,6°, +0,9°, 0.
+     Só `rotate`: nada de opacidade, nada de layout.
+     A curva muda de trecho para trecho de propósito. O primeiro é um tranco
+     (sai rápido, desacelera na ponta); do segundo em diante é pêndulo, com
+     `ease-in-out` zerando a velocidade em cada extremo. Com uma curva só,
+     `ease-out` em tudo, o balanço fica espasmódico — chega no pico em menos
+     de um sexto do tempo e o resto parece tremor. */
+  @keyframes chacoalhar {
+    0% {
+      rotate: 0deg;
+      animation-timing-function: cubic-bezier(0.2, 0.85, 0.35, 1);
+    }
+    20% {
+      rotate: 21deg;
+      animation-timing-function: ease-in-out;
+    }
+    38% {
+      rotate: 10.6deg;
+      animation-timing-function: ease-in-out;
+    }
+    55% {
+      rotate: 17.8deg;
+      animation-timing-function: ease-in-out;
+    }
+    71% {
+      rotate: 13.4deg;
+      animation-timing-function: ease-in-out;
+    }
+    86% {
+      rotate: 15.9deg;
+      animation-timing-function: ease-in-out;
+    }
+    100% {
+      rotate: 15deg;
+    }
+  }
+
+  /* --- Tipografia do item --- */
+  .quando {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-ink-body);
+    text-transform: uppercase;
+  }
+
+  .titulo {
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.3;
+    color: var(--color-ink);
+  }
+
+  @media (min-width: 1024px) {
+    .caixa-lata {
+      width: 80px;
+      height: 96px;
+    }
+
+    .caixa-lata :global(svg) {
+      width: 45.092px;
+      height: 80px;
+    }
+
+    .quando {
+      font-size: 16px;
+    }
+
+    .titulo {
+      font-size: 24px;
+    }
+  }
+
+  /* Sem balanço: a lata simplesmente assume a inclinação final. O global.css
+     já derruba a duração de toda animação aqui, mas declarar explícito evita
+     depender disso. */
+  @media (prefers-reduced-motion: reduce) {
+    .caixa-lata :global(svg),
+    .etapa[data-ativo] .caixa-lata :global(svg) {
+      animation: none;
+      transition: none;
+    }
+
+    .etapa::before {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,170 @@
+---
+/**
+ * Sua jornada começa aqui — Figma 6032:2525 (desktop 1440×776) e
+ * 6033:4358 (mobile 375×845).
+ *
+ * Duas colunas no desktop (488 + 80 + lista), uma no mobile. No mobile o CTA
+ * cai DEPOIS da lista — é a única diferença de ordem entre os dois desenhos.
+ * Em vez de repetir o botão em dois lugares, a coluna esquerda vira
+ * `display: contents` no mobile: os três blocos dela passam a ser filhos
+ * diretos do arranjo e o `order` recoloca lista e CTA. No desktop ela volta a
+ * ser caixa — e é essa caixa que gruda.
+ *
+ * COMPORTAMENTO pedido pelo cliente, além do Figma:
+ *  1. a coluna esquerda fica parada enquanto a lista rola (`lg:sticky`);
+ *  2. a etapa na altura de leitura vira a ativa (IntersectionObserver);
+ *  3. o mouse tem prioridade sobre a rolagem;
+ *  4. a lata da etapa ativa chacoalha até parar na inclinação do Figma —
+ *     15° medidos, ver EtapaItem.astro e EtapaLatinha.astro.
+ *
+ * `position: sticky` morre sob qualquer ancestral com `overflow` != visible:
+ * nada aqui recorta, e a lata inclinada transborda a caixa dela de propósito.
+ */
+import RevealText from '../RevealText.astro';
+import Button from '../Button.astro';
+import EtapaItem from './etapas/EtapaItem.astro';
+import { ETAPAS } from '../../data/etapas';
+import { CTA_URL, CTA_LABEL } from '../../data/site';
+
+interface Props {
+  /**
+   * Desliga só o observer que elege a etapa ativa pela rolagem, mantendo a
+   * primeira ativa. Existe para a página de preview conseguir um print
+   * determinístico na comparação com o Figma — em produção fica ligado.
+   */
+  spy?: boolean;
+}
+
+const { spy = true } = Astro.props;
+---
+
+<section id="etapas" class="section-y bg-surface-alt" data-spy={spy ? 'on' : 'off'}>
+  <div class="container-lp">
+    <div class="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-20">
+      <!-- Coluna esquerda: some como caixa no mobile para o CTA poder
+           descer para depois da lista sem ser renderizado duas vezes. -->
+      <div
+        class="contents lg:sticky lg:top-24 lg:flex lg:h-fit lg:w-[488px] lg:min-w-0 lg:flex-col lg:gap-8"
+      >
+        <div class="flex flex-col items-start gap-4">
+          <p class="eyebrow" data-reveal>Etapas do processo</p>
+          <RevealText as="h2" class="h2 w-full" text="Sua jornada começa aqui." />
+        </div>
+
+        <p class="body-lg" data-reveal>
+          Um processo pensado para encontrar quem quer construir algo real, com tempo, conversa
+          e espaço para mostrar o que pode fazer.
+        </p>
+
+        <div class="order-2 lg:order-none" data-reveal>
+          <Button href={CTA_URL} seta bloco>
+            {CTA_LABEL}
+          </Button>
+        </div>
+      </div>
+
+      <!-- A lista. No Figma ela tem 695 fixos e estoura a grade de 1216 em
+           47px (mesma folga do header, ver docs/figma/MAPA.md, armadilha 6).
+           Aqui ela ocupa o que sobra: o trilho e as latas caem no mesmo x do
+           desenho e só a borda direita — invisível, o texto é curto e
+           alinhado à esquerda — fica mais perto. -->
+      <ol class="order-1 py-4 lg:order-none lg:min-w-0 lg:flex-1" data-reveal-stagger>
+        {ETAPAS.map((etapa, i) => <EtapaItem etapa={etapa} ativo={i === 0} />)}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { revealWords, revealOnScroll, revealStagger } from '../../lib/motion';
+
+  /* Três gestos de entrada, a receita do playbook: o heading palavra a
+     palavra, o apoio + CTA logo atrás, e a lista em cascata. O balanço da
+     lata NÃO está aqui — é estado, não entrada, e mora no CSS do item. */
+  revealWords('#etapas [data-reveal-words]');
+  revealOnScroll('#etapas [data-reveal]', { atraso: 0.15 });
+  revealStagger('#etapas [data-reveal-stagger]');
+
+  const secao = document.querySelector<HTMLElement>('#etapas');
+  const itens = secao ? Array.from(secao.querySelectorAll<HTMLElement>('[data-etapa]')) : [];
+
+  if (secao && itens.length) {
+    const fino = matchMedia('(hover: hover) and (pointer: fine)');
+
+    let porScroll = Math.max(
+      0,
+      itens.findIndex((li) => li.hasAttribute('data-ativo')),
+    );
+    /** -1 = ninguém sob o mouse; o scroll manda. */
+    let porHover = -1;
+
+    const pintar = () => {
+      const alvo = porHover >= 0 ? porHover : porScroll;
+      itens.forEach((li, i) => {
+        const deve = i === alvo;
+        // Só mexe quando muda de verdade: reescrever o atributo em cima do
+        // que já está lá reiniciaria o balanço da lata a cada quadro.
+        if (deve !== li.hasAttribute('data-ativo')) li.toggleAttribute('data-ativo', deve);
+      });
+    };
+
+    /* --- Prioridade do mouse ---
+       Passar o mouse torna a etapa ativa na hora e suspende o controle pelo
+       scroll; ao sair, o scroll reassume com o que ele já tinha elegido.
+       Restrito a ponteiro fino: no toque o browser dispara `pointerenter` e
+       só solta no próximo toque fora, e o destaque ficaria grudado (QA-018). */
+    itens.forEach((li, i) => {
+      li.addEventListener('pointerenter', (e) => {
+        if (e.pointerType !== 'mouse' || !fino.matches) return;
+        porHover = i;
+        pintar();
+      });
+      li.addEventListener('pointerleave', (e) => {
+        if (e.pointerType !== 'mouse') return;
+        porHover = -1;
+        pintar();
+      });
+    });
+
+    /* --- Etapa ativa pela rolagem ---
+       Mesma ideia do scrollspy do Header: IntersectionObserver com
+       `rootMargin` recortando uma zona de leitura e, entre os candidatos, o
+       de maior `intersectionRatio`. A faixa tem 10% da altura da viewport e
+       fica no TERÇO SUPERIOR (28%–38%), não no meio: é onde o olho está
+       quando se lê uma lista rolando, e o item acende antes de chegar ao
+       centro em vez de depois. Precisa de limiares finos: a etapa é mais alta que
+       a faixa, então a razão nunca chega perto de 1. */
+    if (secao.dataset.spy !== 'off') {
+      const razoes = new Map<Element, number>();
+      const limiares = Array.from({ length: 51 }, (_, i) => i / 50);
+
+      const observador = new IntersectionObserver(
+        (entradas) => {
+          for (const e of entradas) {
+            if (e.isIntersecting) razoes.set(e.target, e.intersectionRatio);
+            else razoes.delete(e.target);
+          }
+
+          let melhor: Element | null = null;
+          let maior = 0;
+          razoes.forEach((razao, el) => {
+            if (razao > maior) {
+              maior = razao;
+              melhor = el;
+            }
+          });
+
+          // Ninguém na faixa: a seção está longe da linha de leitura e a
+          // última eleita continua valendo. Apagar tudo seria pior.
+          if (!melhor) return;
+
+          porScroll = itens.indexOf(melhor as HTMLElement);
+          pintar();
+        },
+        { threshold: limiares, rootMargin: '-28% 0px -62% 0px' },
+      );
+
+      itens.forEach((li) => observador.observe(li));
+    }
+  }
+</script>

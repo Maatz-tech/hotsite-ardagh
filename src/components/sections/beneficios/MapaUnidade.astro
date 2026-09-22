@@ -1,0 +1,83 @@
+---
+/**
+ * Caixa do mapa de uma unidade — Figma `6100:23` (desktop) e `6100:74` (mobile).
+ *
+ * A caixa é 232×190 no desktop e 100%×190 no mobile; nos dois o contorno do
+ * estado fica centrado, e é por isso que o pino é posicionado em relação ao
+ * CONTORNO e não à caixa: assim o par (x, y) vale nos dois viewports sem
+ * recalcular nada.
+ *
+ * São Paulo e Jacareí compartilham o mesmo contorno (SP) e diferem só no pino.
+ */
+import type { Mapa } from '../../../data/locais';
+import BenMapaSp from '../../icons/BenMapaSp.astro';
+import BenPino from '../../icons/BenPino.astro';
+
+interface Props {
+  mapa: Mapa;
+  /** Nome da unidade — entra no rótulo acessível da figura. */
+  nome: string;
+}
+
+const { mapa, nome } = Astro.props;
+
+const CONTORNOS = { sp: BenMapaSp } as const;
+const Contorno = CONTORNOS[mapa.estado];
+---
+
+<div class="caixa-mapa" role="img" aria-label={`Localização da unidade de ${nome} no mapa do estado`}>
+  <div class="contorno">
+    <Contorno />
+    <span class="pino" style={`--pino-x:${mapa.pino.x}px;--pino-y:${mapa.pino.y}px`}>
+      <BenPino />
+    </span>
+  </div>
+</div>
+
+<style>
+  .caixa-mapa {
+    display: flex;
+    height: 190px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    background: var(--color-surface-alt);
+    color: var(--color-brand);
+  }
+
+  .contorno {
+    position: relative;
+    display: block;
+  }
+
+  /* QA-030: o carimbo de escopo não chega à raiz do componente filho, então
+     as regras do <svg> ficam ancoradas num seletor deste template. */
+  .contorno :global(svg) {
+    display: block;
+    /* O traço de 1px do contorno sangra meio pixel para fora da caixa do nó;
+       sem isto o <svg> recortaria essa metade. */
+    overflow: visible;
+  }
+
+  .pino {
+    position: absolute;
+    left: var(--pino-x);
+    top: var(--pino-y);
+    display: block;
+    width: 16.5px;
+    height: 21px;
+  }
+
+  .pino :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .caixa-mapa {
+      width: 232px;
+    }
+  }
+</style>

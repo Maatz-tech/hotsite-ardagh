@@ -1,0 +1,48 @@
+---
+/**
+ * Botão da marca. Estilo mora em global.css (.btn / .btn-primary / …).
+ * Com `href` vira <a> (navega), sem `href` vira <button> (executa ação).
+ *
+ * No layout há duas famílias: azul (padrão) e verde (`accent`, sobre o
+ * fundo do hero). Os botões das seções levam seta; o do header, não.
+ */
+import Seta from './icons/Seta.astro';
+
+interface Props {
+  href?: string;
+  variant?: 'primary' | 'accent' | 'outline' | 'invert';
+  size?: 'sm' | 'md' | 'lg';
+  /** Mostra a seta à direita. */
+  seta?: boolean;
+  /** Largura cheia no mobile, tamanho do conteúdo no desktop. */
+  bloco?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  variant = 'primary',
+  size = 'md',
+  seta = false,
+  bloco = false,
+  class: className = '',
+} = Astro.props;
+
+const classes = ['btn', `btn-${variant}`, `btn-${size}`, bloco && 'btn-bloco', className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+{
+  href ? (
+    <a href={href} class={classes}>
+      <slot />
+      {seta && <Seta class="btn-icon size-6 shrink-0" />}
+    </a>
+  ) : (
+    <button type="button" class={classes}>
+      <slot />
+      {seta && <Seta class="btn-icon size-6 shrink-0" />}
+    </button>
+  )
+}

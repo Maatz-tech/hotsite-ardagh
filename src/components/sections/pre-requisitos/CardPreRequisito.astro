@@ -1,0 +1,104 @@
+---
+/**
+ * Card de pré-requisito — chip verde com ícone, título e texto, sobre o
+ * fundo azul da seção. Figma 6031:2170 / 6031:2182 / 6031:2194 (desktop) e
+ * 6032:4319 / 6032:4327 / 6032:4339 (mobile).
+ *
+ * A caixa mede igual nos dois viewports: padding 32, raio 24, gap 32 entre
+ * o chip e o bloco de texto, gap 14 entre título e descrição. O que muda é
+ * só a largura, que vem do grid da seção.
+ *
+ * ATENÇÃO — nós ocultos: dentro do 2º e do 3º card o Figma guarda um `btn`
+ * ("Saiba mais" + seta) com `hidden="true"` — 6031:2190, 6031:2202,
+ * 6032:4335 e 6032:4347. É versão anterior. NÃO implementar.
+ *
+ * O card é informativo — não leva a lugar nenhum — então não reage ao
+ * hover. Mesmo critério do CardPrograma.
+ */
+interface Props {
+  titulo: string;
+  texto: string;
+}
+
+const { titulo, texto } = Astro.props;
+---
+
+<article class="card-pre">
+  {/* O ícone entra por <slot>: o <style> com escopo do Astro não carimba a
+      raiz de um componente filho, então o chip precisa ser um elemento
+      DESTE template. Ver playbook/09-qa-erros-comuns.md#qa-030 */}
+  <span class="chip">
+    <slot />
+  </span>
+
+  <div class="texto-bloco">
+    <h3 class="h4 titulo">{titulo}</h3>
+    <p class="descricao">{texto}</p>
+  </div>
+</article>
+
+<style>
+  /* PENDÊNCIA DE TOKEN: o Figma arredonda a caixa em 24px e --radius-card
+     vale 20px — mesma divergência já registrada no CardPrograma. Enquanto
+     o token não for revisto no global.css, o valor mora aqui, nomeado. */
+  .card-pre {
+    --radius-chip: 12px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 32px;
+    border-radius: var(--radius-box);
+    /* PENDÊNCIA DE TOKEN: o Figma pede branco a 5% e a família --color-on-dark-*
+       só desce até 15%. Derivado do token em vez de hex solto. */
+    background: color-mix(in srgb, var(--color-surface) 5%, transparent);
+  }
+
+  .chip {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-chip);
+    background: var(--color-accent);
+    color: var(--color-surface);
+  }
+
+  /* Dar tamanho à raiz do <svg> que chega pelo slot — ancorado num seletor
+     do próprio template, então o :global não vaza. Ver #qa-030 */
+  .chip :global(svg) {
+    width: 24px;
+    height: 24px;
+  }
+
+  .texto-bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+  }
+
+  /* PENDÊNCIA DE TOKEN: o Figma pede 20px nos dois viewports e a utilitária
+     .h3 vale 22px no mobile e 24px no desktop — por isso o título não a usa.
+     A caixa de 31px é a do Figma (texto centrado nela), não a altura natural
+     da linha, que daria 26px. Mesma situação do CardPrograma. */
+  .titulo {
+    display: flex;
+    align-items: center;
+    min-height: 31px;
+    /* Só a cor: o resto vem de .h4. Este card é sobre o azul. */
+    color: var(--color-surface);
+  }
+
+  /* A .body vale 16/1.3; aqui o Figma abre para 1.5 nos dois viewports —
+     é o que faz a descrição fechar na altura do desenho (72px em 3 linhas). */
+  .descricao {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-surface);
+  }
+</style>

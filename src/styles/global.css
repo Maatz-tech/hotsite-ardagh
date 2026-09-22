@@ -1,0 +1,453 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Design tokens — Programa Crescer / Ardagh Metal Packaging 2027
+   Fonte de verdade: Figma RXNF0LxVHITuN11JZwDpj2
+   NUNCA hard-codar cor/fonte fora deste arquivo.
+   Ver playbook/02-tokens-e-globais.md
+   ============================================================ */
+
+@theme {
+  /* --- Marca ---
+     Nomes do Figma entre parênteses. O azul é a cor de ação
+     (botões, links, item ativo); o verde é o destaque. */
+  --color-brand: #0099d8;        /* (blue) botões, links, nav ativo */
+  --color-brand-dark: #0079ae;   /* hover do azul — escurecido 20% */
+  --color-brand-band: #056eb7;   /* faixa principal do rodapé */
+  --color-brand-deep: #0063a7;   /* faixa legal do rodapé */
+  --color-brand-soft: #e6f5fc;   /* fundo suave azul */
+
+  --color-accent: #4bcb60;       /* (green) tarja, eyebrow, CTA do hero */
+  --color-accent-dark: #3aab4c;  /* hover do verde */
+  --color-accent-08: rgb(75 203 96 / 0.1);  /* fundo do eyebrow */
+
+  /* --- Azuis do hero (gradiente de malha, medidos no PNG) --- */
+  --color-hero-navy: #002570;
+  --color-hero-mid: #0051a6;
+  --color-hero-light: #0678be;
+
+  /* --- Superfícies neutras --- */
+  --color-ink: #333333;          /* (text) títulos */
+  --color-ink-body: #535353;     /* (text 2) corpo de texto */
+  --color-line: #d4d4d4;         /* (cinza) filetes e divisórias */
+  --color-surface: #ffffff;
+  --color-surface-alt: #fafafa;  /* fundo das seções claras (etapas, a-ardagh) */
+  --color-surface-mid: #f5f5f5;  /* variante 5 unidades mais escura que o
+                                    Figma usa só em "o-programa". Medido nos
+                                    PNGs de referência das 6 seções claras:
+                                    3 são #ffffff, 2 #fafafa e 1 #f5f5f5.
+                                    Provável deslize do Figma — mantido fiel. */
+
+  /* --- Derivadas: ink com alpha (bordas, sombras) --- */
+  --color-ink-70: rgb(51 51 51 / 0.7);
+  --color-ink-40: rgb(51 51 51 / 0.4);
+  --color-ink-08: rgb(51 51 51 / 0.08);
+
+  /* --- Derivadas: on-dark (texto sobre o azul) --- */
+  --color-on-dark-70: rgb(255 255 255 / 0.7);
+  --color-on-dark-45: rgb(255 255 255 / 0.45);
+  --color-on-dark-32: rgb(255 255 255 / 0.32);
+  --color-on-dark-15: rgb(255 255 255 / 0.15);
+
+  /* --- Tipografia ---
+     Gotham Rounded, a fonte do layout, servida do próprio domínio.
+     Quatro pesos (o limite do playbook), sem itálico — o desenho não usa.
+     A VAG Rounded Std que aparece na faixa legal do Figma é resíduo do
+     template da Eureca; o site inteiro é Gotham Rounded. */
+  --font-sans: "Gotham Rounded", ui-sans-serif, system-ui, sans-serif;
+
+  /* --- Layout --- */
+  --container-lp: 1216px;   /* 1440 - 112*2 */
+  --radius-card: 20px;      /* boxes e imagens */
+  --radius-box: 24px;       /* cards e painéis — apareceu em 3 seções */
+  --radius-btn: 100px;      /* botões são pílula neste layout */
+  --radius-pill: 24px;      /* eyebrow / chip */
+  --radius-header: 20px;    /* a pílula do header */
+}
+
+/* Os OTFs originais foram subsetados para Latin-1 mais a pontuação
+   tipográfica do layout: 110 KB cada vira ~18 KB. `swap` para o texto
+   nunca ficar invisível esperando a fonte. */
+@font-face {
+  font-family: "Gotham Rounded";
+  src: url("/fonts/gotham-rounded-light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham Rounded";
+  src: url("/fonts/gotham-rounded-book.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham Rounded";
+  src: url("/fonts/gotham-rounded-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham Rounded";
+  src: url("/fonts/gotham-rounded-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background: var(--color-surface);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Tudo que é clicável tem cursor — <button> e <summary> não têm
+     por padrão em todos os browsers. Ver playbook/06-micro-interacoes.md */
+  button,
+  summary,
+  label[for],
+  a[href],
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  /* Focus sempre visível — nunca remover sem substituir */
+  :focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Sobre o azul, o foco azul sumiria */
+  .on-dark :focus-visible {
+    outline-color: var(--color-accent);
+  }
+}
+
+/* ============================================================
+   Utilitárias semânticas
+   Escala medida nos nós reais do Figma (get_design_context).
+   ============================================================ */
+
+@layer components {
+  /* --- Container --- */
+  /* O conteúdo mede 1216 no 1440 (margem de 112) e 327 no 375 (margem
+     de 24) — por isso o max-width soma o padding em vez de descontá-lo. */
+  .container-lp {
+    width: 100%;
+    max-width: calc(var(--container-lp) + 48px);
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* Ritmo vertical das seções: 64px no mobile, 100px no desktop */
+  .section-y {
+    padding-block: 64px;
+  }
+
+  /* --- Tipografia --- */
+  .h1 {
+    font-weight: 500;
+    font-size: 32px;
+    line-height: 1.25;
+  }
+
+  .h2 {
+    font-weight: 500;
+    font-size: 24px;
+    /* 1.2 no mobile e 1.3 no desktop — medido nos nós dos dois viewports. */
+    line-height: 1.2;
+    color: var(--color-ink);
+  }
+
+  .h3 {
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.3;
+    color: var(--color-ink);
+  }
+
+  /* leading 1.3 e não 1.5: é o que o Figma usa no CORPO CORRIDO deste
+     projeto, e é o que faz os blocos de texto fecharem na altura do desenho.
+     Texto dentro de card e subtítulo de seção são a exceção — lá o desenho
+     usa 1.5 e a seção sobrescreve. */
+  /* Degrau entre .h3 (22/24) e o corpo: título de card, 20px nos dois
+     viewports. Apareceu em 3 seções. */
+  .h4 {
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.3;
+    color: var(--color-ink);
+  }
+
+  .body {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.3;
+    color: var(--color-ink-body);
+  }
+
+  /* Parágrafo de apoio sob o heading. Apareceu em 4 seções com o mesmo
+     papel; `beneficios` abre para 1.5 e sobrescreve. */
+  .body-lg {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 1.3;
+    color: var(--color-ink-body);
+  }
+
+  .body-sm {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--color-ink-body);
+  }
+
+  .body-on-dark {
+    color: var(--color-surface);
+  }
+
+  /* Eyebrow — pílula verde clara acima do heading */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent-08);
+    color: var(--color-accent);
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  /* Bloco de destaque: barra vertical + frase. Aparece no hero (verde), em
+     matéria-prima e em jeito-ardagh (azul). Estrutural, não temática — a
+     barra segue o `color` do texto, então cada seção declara só a cor.
+     O hero usa 16px de respiro em vez de 19 e mantém o estilo próprio;
+     é provável deslize do Figma, a confirmar com o designer. */
+  .barra-destaque {
+    border-inline-start: 3px solid currentColor;
+    padding-inline-start: 19px;
+    font-size: 20px;
+    line-height: 1.5;
+  }
+
+  /* --- Botões — pílula, ícone de seta à direita --- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 500;
+    border-radius: var(--radius-btn);
+    white-space: nowrap;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      border-color 200ms ease,
+      transform 200ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .btn-primary {
+    background: var(--color-brand);
+    color: var(--color-surface);
+  }
+
+  /* Verde — o CTA do hero, sobre o azul */
+  .btn-accent {
+    background: var(--color-accent);
+    color: var(--color-surface);
+  }
+
+  .btn-outline {
+    border: 1px solid var(--color-brand);
+    color: var(--color-brand);
+    background: transparent;
+  }
+
+  /* Invertido — dentro de seções de fundo azul */
+  .btn-invert {
+    background: var(--color-surface);
+    color: var(--color-brand);
+  }
+
+  /* Tamanhos medidos: header 44px, seções 52px. Mesmo corpo de texto
+     nos dois — o que muda é a altura. */
+  .btn-sm {
+    font-size: 18px;
+    height: 44px;
+    padding-inline: 32px;
+  }
+
+  .btn-md {
+    font-size: 18px;
+    height: 52px;
+    padding-inline: 32px;
+  }
+
+  .btn-lg {
+    font-size: 18px;
+    height: 56px;
+    padding-inline: 40px;
+  }
+
+  /* CTA que ocupa a largura toda no mobile — rótulo à esquerda, seta à
+     direita — e volta ao tamanho do conteúdo no desktop. 4 seções. */
+  .btn-bloco {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* --- Cards --- */
+  .card {
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+
+  /* --- Chip --- */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: var(--radius-pill);
+    font-size: 16px;
+    line-height: 1.4;
+    padding: 12px 20px;
+  }
+}
+
+/* Escala do desktop — a partir do breakpoint lg do playbook */
+@media (min-width: 1024px) {
+  .section-y {
+    padding-block: 100px;
+  }
+  .h1 {
+    font-size: 40px;
+  }
+  .h2 {
+    font-size: 36px;
+    line-height: 1.3;
+  }
+  .h3 {
+    font-size: 24px;
+  }
+  /* No desktop o CTA volta ao tamanho do conteúdo, com rótulo e seta
+     juntos no centro. */
+  .btn-bloco {
+    width: auto;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   Hover — FORA de @layer de propósito.
+   No Tailwind v4 as utilitárias vencem qualquer coisa dentro de
+   @layer components, então `border-transparent` no elemento mataria
+   um hover escrito lá dentro. Regra sem layer vence todas as layers.
+   Ver playbook/09-qa-erros-comuns.md#qa-001
+
+   Envolvidas em @media (hover: hover) para não grudar no toque —
+   QA-018. :active e :focus-visible ficam de fora, valem sempre.
+   ============================================================ */
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+  .btn-primary:hover {
+    background: var(--color-brand-dark);
+  }
+  .btn-accent:hover {
+    background: var(--color-accent-dark);
+  }
+  .btn-outline:hover {
+    background: var(--color-brand);
+    color: var(--color-surface);
+  }
+  .btn-invert:hover {
+    background: var(--color-brand-soft);
+  }
+  .btn:hover .btn-icon {
+    transform: translateX(3px);
+  }
+  .card-interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px var(--color-ink-08);
+  }
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  transition: transform 200ms ease;
+}
+
+/* Card que leva a algum lugar reage; card informativo não. */
+.card-interactive {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
+}
+
+/* ============================================================
+   Movimento — estado inicial dos reveals.
+   Condicionado à classe .js (setada no <head> do Base.astro):
+   sem JS, nada fica invisível.
+   Ver playbook/05-animacao.md
+   ============================================================ */
+
+.js [data-reveal],
+.js [data-reveal-x],
+.js [data-reveal-stagger] > *,
+.js [data-reveal-words] > [data-palavra] {
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+
+.js [data-draw-line] {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .js [data-reveal],
+  .js [data-reveal-x],
+  .js [data-reveal-stagger] > *,
+  .js [data-reveal-words] > [data-palavra] {
+    opacity: 1;
+  }
+
+  .js [data-draw-line] {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,253 @@
+---
+/**
+ * Painel de uma unidade — Figma `6100:11` (desktop) e `6032:3898` (mobile).
+ *
+ * Desktop: duas colunas, 232 + 80 de gap + resto (822 em 1216).
+ * Mobile: uma coluna, o mapa logo abaixo da bolsa e os chips empilhados.
+ *
+ * O estado ativo mora em `[data-ativo]` e em nenhum outro lugar — o JS não
+ * alterna classe de cor nenhuma. Ver playbook/09-qa-erros-comuns.md#qa-024.
+ */
+import type { Unidade } from '../../../data/locais';
+import { PERIODO_BOLSA } from '../../../data/locais';
+import BenBolsa from '../../icons/BenBolsa.astro';
+import ChipBeneficio from './ChipBeneficio.astro';
+import MapaUnidade from './MapaUnidade.astro';
+
+interface Props {
+  unidade: Unidade;
+  /** Painel que nasce visível. */
+  ativo?: boolean;
+  /**
+   * Só o primeiro painel entra com reveal. Os outros aparecem prontos: como
+   * o `inView` dispara de novo quando um elemento volta de `display: none`,
+   * marcar todos faria a grade recomeçar a cascata a cada troca de aba.
+   */
+  comReveal?: boolean;
+}
+
+const { unidade, ativo = false, comReveal = false } = Astro.props;
+---
+
+<!-- <div> e não <article>: o papel `tabpanel` não é permitido em <article>
+     (axe: aria-allowed-role). -->
+<div
+  class="painel"
+  role="tabpanel"
+  id={`painel-${unidade.id}`}
+  aria-labelledby={`aba-${unidade.id}`}
+  data-ativo={ativo ? '' : undefined}
+>
+  <div class="coluna-local">
+    <h3 class="h4 painel-titulo">{unidade.nome}</h3>
+
+    <div class="bolsa">
+      <span class="bolsa-icone"><BenBolsa /></span>
+      <div class="bolsa-texto">
+        <p class="bolsa-rotulo">Bolsa-auxílio</p>
+        <p class="bolsa-valor">
+          <strong>{unidade.bolsa}</strong><span class="bolsa-periodo">{PERIODO_BOLSA}</span>
+        </p>
+      </div>
+    </div>
+
+    <MapaUnidade mapa={unidade.mapa} nome={unidade.nome} />
+  </div>
+
+  <div class="coluna-beneficios">
+    <ul class="grade" data-reveal-stagger={comReveal ? '' : undefined}>
+      {
+        unidade.beneficios.map((b) => (
+          <ChipBeneficio icone={b.icone} rotulo={b.rotulo} nota={b.nota} />
+        ))
+      }
+    </ul>
+
+    <div class="e-mais">
+      <p class="e-mais-rotulo">E MAIS:</p>
+      <p class="e-mais-texto">{unidade.eMais}</p>
+    </div>
+
+    <hr class="filete" />
+
+    <div class="notas">
+      {unidade.notas.map((n) => <p>{n}</p>)}
+    </div>
+  </div>
+</div>
+
+<style>
+  .painel {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-box);
+    background: var(--color-surface);
+    padding: 24px;
+  }
+
+  .coluna-local {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Estrutura em .h4; este nó fecha o leading em 1.2. */
+  .painel-titulo {
+    line-height: 1.2;
+  }
+
+  .bolsa {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .bolsa-icone {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--color-brand);
+    color: var(--color-surface);
+  }
+
+  /* QA-030 — ancorado no pai escopado, não vaza. */
+  .bolsa-icone :global(svg) {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+
+  .bolsa-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bolsa-rotulo {
+    font-size: 16px;
+    line-height: 1.2;
+    color: var(--color-ink-body);
+  }
+
+  .bolsa-valor {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    line-height: 1.2;
+  }
+
+  .bolsa-valor strong {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  /* Gotham Rounded Light, como no Figma. */
+  .bolsa-periodo {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--color-ink-body);
+  }
+
+  .coluna-beneficios {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .grade {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .e-mais {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .e-mais-rotulo {
+    flex: none;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+
+  .e-mais-texto {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-ink-body);
+  }
+
+  .filete {
+    height: 1px;
+    border: 0;
+    margin: 0;
+    background: var(--color-line);
+  }
+
+  .notas p {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-ink-body);
+  }
+
+  @media (min-width: 1024px) {
+    /* No desktop é aba: um painel por vez. No mobile os quatro convivem no
+       trilho e a navegação é por rolagem. A regra mora aqui, e não na seção,
+       porque `.painel` é a raiz DESTE componente — o <style> com escopo da
+       seção não a alcançaria (QA-030). */
+    .painel:not([data-ativo]) {
+      display: none;
+    }
+
+    .painel {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 80px;
+      border-radius: 40px;
+      padding: 40px;
+    }
+
+    .coluna-local {
+      width: 232px;
+      flex: none;
+      gap: 32px;
+    }
+
+    .painel-titulo {
+      font-size: 24px;
+    }
+
+    .coluna-beneficios {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    /* As três fileiras do Figma caem sozinhas: os chips têm largura de
+       conteúdo e a faixa mede 822. */
+    .grade {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .e-mais {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>

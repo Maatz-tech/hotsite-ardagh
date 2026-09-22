@@ -1,0 +1,283 @@
+---
+/**
+ * A Ardagh Metal Packaging — Figma 6031:2339 (desktop 1440×663) e
+ * 6033:4549 (mobile 375×1110).
+ *
+ * Duas colunas alinhadas pela BASE no desktop (texto 695 + 80 de gap +
+ * composição 393 = 1168 num contêiner de 1216). A sobra de 48px fica à
+ * DIREITA, como no Figma — por isso a coluna de texto tem largura fixa e não
+ * `flex-1`, que engoliria a folga e empurraria a composição para a borda.
+ * uma no mobile com a composição por último. O PNG achatado do mobile
+ * (`image 384`, 786×786) tem a mesma proporção 1:1 do bloco de 393 do
+ * desktop — então a composição é montada uma vez, medida em `cqw`, e serve
+ * os dois viewports com um jogo de imagens só. Mesmo caminho do hero.
+ *
+ * Fundo: o nó desktop declara #fafafa e o mobile #f5f5f5. Mantido um só
+ * (--color-surface-alt) — coerência entre os dois viewports da mesma seção
+ * vale mais que reproduzir um deslize do Figma. Mesma decisão de `etapas`.
+ */
+import Button from '../Button.astro';
+import RevealText from '../RevealText.astro';
+import AArdaghLatinha from '../icons/AArdaghLatinha.astro';
+import { CTA_URL, CTA_LABEL } from '../../data/site';
+
+const PARAGRAFOS = [
+  'A Ardagh Metal Packaging (AMP) é uma das líderes globais na produção e venda de embalagens de alumínio para bebidas, com 3 unidades de produção no Brasil e um escritório localizado em São Paulo.',
+  'A confiança, o trabalho em equipe e a excelência são nossos valores, e junto com o talento que buscamos, serão a fórmula perfeita para crescermos juntos!',
+  'Somos apaixonados por sustentabilidade e temos uma ótima reputação pela inovação e qualidade que oferecemos a nossos clientes. Nosso objetivo é reduzir os impactos ambientais, enquanto permanecemos economicamente sustentáveis e socialmente responsáveis.',
+];
+---
+
+<section id="a-ardagh" class="section-y bg-surface-alt">
+  <div class="container-lp">
+    <div class="flex flex-col gap-10 lg:flex-row lg:items-end lg:gap-20">
+      <!-- Coluna de texto -->
+      <div class="flex flex-col gap-10 lg:w-[695px] lg:min-w-0 lg:shrink-0 lg:gap-8">
+        <div class="flex flex-col items-start gap-4 lg:gap-8">
+          <p class="eyebrow" data-reveal>Sobre nós</p>
+          <RevealText as="h2" class="h2 w-full" text="A Ardagh Metal Packaging" />
+        </div>
+
+        <div class="texto" data-reveal>
+          {PARAGRAFOS.map((p) => <p>{p}</p>)}
+        </div>
+
+        <div data-reveal>
+          <Button href={CTA_URL} seta class="w-full lg:w-fit">{CTA_LABEL}</Button>
+        </div>
+      </div>
+
+      <!-- Composição: caixa verde com a latinha, base azul e a foto.
+           Tudo em cqw sobre um bloco 1:1 de 393 — as medidas são as do
+           Figma divididas por 393. -->
+      <div class="composicao lg:shrink-0" data-reveal>
+        <div class="peca caixa-verde">
+          <!-- A lata extravasa a caixa verde para cima; o recorte é o do
+               Figma, não a caixa. -->
+          <div class="janela-lata">
+            <img
+              src="/images/a-ardagh/latinha.webp"
+              alt=""
+              aria-hidden="true"
+              width="464"
+              height="778"
+              class="lata object-cover"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        <div class="peca base">
+          <AArdaghLatinha class="size-full" />
+        </div>
+
+        <img
+          src="/images/a-ardagh/foto.webp"
+          alt="Latas de alumínio produzidas pela Ardagh Metal Packaging"
+          width="284"
+          height="554"
+          class="peca foto"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Os parágrafos vazios do Figma são uma linha em branco entre blocos —
+     vira `gap`, não margem arbitrária. */
+  .texto {
+    display: flex;
+    flex-direction: column;
+    gap: 1.3em;
+    font-size: 16px;
+    line-height: 1.3;
+    color: var(--color-ink-body);
+  }
+
+  .composicao {
+    /* Precisa cobrir o curso de 4cqw da flutuação, com sobra. */
+    --folga-lata: 5cqw;
+    position: relative;
+    width: 100%;
+    max-width: 393px;
+    aspect-ratio: 1;
+    container-type: inline-size;
+  }
+
+  .peca {
+    position: absolute;
+    display: block;
+  }
+
+  /* Medidas do Figma (bloco de 393) convertidas: valor / 393 × 100 */
+  .caixa-verde {
+    left: 0;
+    top: 29.517cqw;
+    width: 59.033cqw;
+    height: 70.483cqw;
+    border-radius: 5.089cqw;
+    background: var(--color-accent);
+  }
+
+  /* A lata boia. Como no hero: transform puro, nada de opacity, e numa
+     camada separada do parallax — animação CSS vence style inline, então as
+     duas no mesmo elemento se anulariam (QA-033). Aqui o parallax mora na
+     .caixa-verde e a flutuação na própria imagem.
+     Mais lenta e com menos curso que a do hero porque esta lata é bem maior:
+     objeto pesado que se mexe rápido parece leve. */
+  /* Dois pontos e `alternate`, não um ciclo de waypoints: com quatro
+     paradas e `ease-in-out` em cada trecho a velocidade zera em TODO
+     waypoint, e a lata anda de esquina em esquina em vez de boiar.
+
+     A inclinação vai numa animação separada e com OUTRO período. Como 6,5s
+     e 8,3s não se alinham, a combinação nunca repete a mesma pose — é o que
+     dá a sensação de flutuar em vez de repetir um laço.
+
+     `translate` e `rotate` são propriedades independentes, então as duas
+     animações convivem no mesmo elemento sem se sobrescrever. */
+  .lata {
+    animation:
+      boia-lata 6.5s ease-in-out infinite alternate,
+      gira-lata 8.3s ease-in-out infinite alternate;
+  }
+
+  @keyframes boia-lata {
+    from {
+      translate: 0 0;
+    }
+    to {
+      translate: 0 -4cqw;
+    }
+  }
+
+  @keyframes gira-lata {
+    from {
+      rotate: 0.7deg;
+    }
+    to {
+      rotate: -2deg;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lata {
+      animation: none;
+    }
+  }
+
+  /* A janela ganha folga no topo para a lata boiar sem bater no recorte.
+     A imagem é deslocada para baixo pelo mesmo tanto, então em repouso o
+     enquadramento continua o do Figma — o que muda é só o espaço livre
+     acima dela. */
+  .janela-lata {
+    position: absolute;
+    left: 0;
+    top: calc(-28.473cqw - var(--folga-lata));
+    width: 100%;
+    height: calc(98.982cqw + var(--folga-lata));
+    overflow: hidden;
+  }
+
+  .lata {
+    position: absolute;
+    left: 0;
+    top: var(--folga-lata);
+    width: 100%;
+    height: 98.982cqw;
+  }
+
+  /* Easter egg: passar o mouse na latinha branca faz ela chacoalhar.
+     Mesma curva do balanço das etapas — um tranco na saída e pêndulo
+     amortecido depois, que é o que separa elegante de caricato. Aqui
+     oscila em torno de 0° porque o repouso é a lata em pé.
+
+     O alvo é o <svg> e não o .base: o .base leva o parallax (style inline),
+     e animação CSS no mesmo elemento anularia um dos dois (QA-033). Como o
+     <svg> é a raiz de um componente filho, a regra vem com :global ancorado
+     no .base — sem o pai ela não alcançaria (QA-030) e com :global solto
+     vazaria para a página. */
+  .base :global(svg) {
+    transform-origin: 50% 60%;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .base:hover :global(svg) {
+      animation: chacoalha-lata 750ms both;
+    }
+  }
+
+  @keyframes chacoalha-lata {
+    0% {
+      rotate: 0deg;
+      animation-timing-function: cubic-bezier(0.2, 0.85, 0.35, 1);
+    }
+    18% {
+      rotate: -13deg;
+      animation-timing-function: ease-in-out;
+    }
+    36% {
+      rotate: 8.5deg;
+      animation-timing-function: ease-in-out;
+    }
+    54% {
+      rotate: -5deg;
+      animation-timing-function: ease-in-out;
+    }
+    72% {
+      rotate: 2.6deg;
+      animation-timing-function: ease-in-out;
+    }
+    88% {
+      rotate: -1.1deg;
+      animation-timing-function: ease-in-out;
+    }
+    100% {
+      rotate: 0deg;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .base:hover :global(svg) {
+      animation: none;
+    }
+  }
+
+  .base {
+    left: 63.868cqw;
+    bottom: -0.025cqw;
+    width: 36.132cqw;
+    height: 24.173cqw;
+    border-radius: 5.089cqw;
+    background: var(--color-brand);
+    color: var(--color-surface);
+  }
+
+  .foto {
+    left: 63.868cqw;
+    top: 0.025cqw;
+    width: 36.132cqw;
+    height: 70.483cqw;
+    border-radius: 5.089cqw;
+    object-fit: cover;
+  }
+</style>
+
+<script>
+  import { revealWords, revealOnScroll, parallax } from '../../lib/motion';
+
+  revealWords('#a-ardagh [data-reveal-words]');
+  revealOnScroll('#a-ardagh [data-reveal]', { atraso: 0.15 });
+
+  /* Parallax da composição, mesma receita do hero: todas as peças leem o
+     progresso da MESMA referência, senão cada uma calcula a sua e elas
+     desencontram. `ancora: 'parado'` faz o deslocamento começar em zero —
+     antes de qualquer rolagem cada peça está onde o Figma a colocou.
+     A caixa verde (com a lata) adianta, a foto e a base atrasam: 20px de
+     separação relativa no curso todo. */
+  const comum = { alvo: '#a-ardagh', ancora: 'parado' } as const;
+
+  parallax('#a-ardagh .caixa-verde', { ...comum, distancia: 12 });
+  parallax('#a-ardagh .foto, #a-ardagh .base', { ...comum, distancia: -8 });
+</script>

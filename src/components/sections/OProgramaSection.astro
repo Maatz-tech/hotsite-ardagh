@@ -1,0 +1,375 @@
+---
+/**
+ * O Programa — Figma 6027:700 (desktop 1440×683) e 6032:3754 (mobile 375×1034).
+ *
+ * Desktop: coluna de texto de 384 à esquerda, dois cards de 384 à direita,
+ * tudo com 32 de gap. Mobile: o mesmo conteúdo empilhado, com os dois cards
+ * virando carrossel de rolagem horizontal e dois indicadores, e o CTA indo
+ * para o fim, largura cheia.
+ *
+ * A ordem do DOM é a do mobile — que é também a ordem de leitura correta:
+ * título, texto, cards, CTA. No desktop quem recoloca o carrossel na
+ * segunda coluna é o grid, não `order`, justamente para a ordem de foco
+ * nunca divergir do que se vê. A quarta faixa (`1fr`) existe para absorver
+ * a altura sobrando do carrossel: sem ela o grid distribuiria esse excesso
+ * pelas faixas do texto e empurraria o botão para baixo.
+ *
+ * O carrossel é nativo — `scroll-snap` + `overflow-x: auto`. O JS entra só
+ * para sincronizar os indicadores (IntersectionObserver ancorado no próprio
+ * trilho) e para a navegação por seta. Não há autoplay: o Figma não
+ * documenta nenhum, e inventar um criaria uma obrigação de WCAG 2.2.2 que
+ * o desenho não pediu.
+ */
+import Button from '../Button.astro';
+import RevealText from '../RevealText.astro';
+import CardPrograma from './o-programa/CardPrograma.astro';
+import { CTA_URL, CTA_LABEL } from '../../data/site';
+
+const CARDS = [
+  {
+    imagem: '/images/o-programa/cresca-alem-do-estagio.webp',
+    alt: 'Estagiária da Ardagh Metal Packaging sorrindo diante de uma parede de latas de alumínio',
+    titulo: 'Cresça além do estágio',
+    texto:
+      'Ao longo do programa, você terá acesso a trilhas de desenvolvimento, Programa de Educação Corporativa, LinkedIn Learning, Programa de Idiomas Ardagh, grupos de afinidade e programa de voluntariado.',
+    icone: 'folha' as const,
+  },
+  {
+    imagem: '/images/o-programa/areas-de-atuacao.webp',
+    alt: 'Profissional da Ardagh Metal Packaging sorrindo no escritório da fábrica',
+    titulo: 'Áreas de atuação',
+    texto:
+      'As vagas deste ciclo estão concentradas em áreas de engenharia e áreas corporativas, e colocam quem está entrando em contato direto com projetos reais do negócio.',
+    icone: 'foguete' as const,
+  },
+];
+---
+
+<section id="o-programa" class="secao section-y" aria-labelledby="o-programa-titulo">
+  <div class="container-lp bloco">
+    <div class="bloco-titulo">
+      <p class="eyebrow">O programa</p>
+      <RevealText
+        as="h2"
+        id="o-programa-titulo"
+        class="h2"
+        text="Aprender fazendo |**muda** **tudo.**"
+      />
+    </div>
+
+    <p class="body-lg intro" data-reveal>
+      O Programa Crescer é a porta de entrada para quem quer aprender fazendo, dentro de uma
+      das maiores fabricantes de embalagens de alumínio do mundo.
+    </p>
+
+    <div class="carrossel">
+      {/* QA-019: um <div> com overflow-x é região rolável — sem tabindex o
+          Safari e o Firefox não dão foco a ele, e sem role/aria-label o
+          leitor de tela anuncia o texto dos cards solto, sem dizer onde
+          está. O tabindex sai por JS no desktop, onde o trilho não rola. */}
+      <div
+        class="trilho"
+        data-trilho
+        data-reveal-stagger
+        tabindex="0"
+        role="group"
+        aria-roledescription="carrossel"
+        aria-label="Cards do programa"
+      >
+        {CARDS.map((c) => <CardPrograma {...c} />)}
+      </div>
+
+      <div class="pontos">
+        {
+          CARDS.map((c, i) => (
+            <button
+              type="button"
+              class="ponto"
+              data-ponto
+              aria-current={i === 0 ? 'true' : undefined}
+              aria-label={`Ver card ${i + 1} de ${CARDS.length}: ${c.titulo}`}
+            />
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="acao" data-reveal>
+      <Button href={CTA_URL} seta bloco>
+        {CTA_LABEL}
+      </Button>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { revealWords, revealOnScroll, revealStagger } from '../../lib/motion';
+
+  // Três gestos, a receita do playbook/05: heading palavra a palavra,
+  // apoio + CTA com atraso curto, cards em cascata.
+  revealWords('#o-programa [data-reveal-words]');
+  revealOnScroll('#o-programa [data-reveal]', { atraso: 0.15 });
+  revealStagger('#o-programa [data-reveal-stagger]');
+
+  const trilho = document.querySelector<HTMLElement>('#o-programa [data-trilho]');
+  const pontos = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('#o-programa [data-ponto]')
+  );
+
+  if (trilho && pontos.length) {
+    const cards = Array.from(trilho.children) as HTMLElement[];
+
+    const comportamento = (): ScrollBehavior =>
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+    /* A distância até o primeiro card é o scrollLeft do alvo — vale com
+       qualquer gap, sem repetir o 32 do Figma aqui dentro. */
+    const irPara = (i: number) => {
+      const alvo = cards[Math.max(0, Math.min(cards.length - 1, i))];
+      if (alvo) {
+        trilho.scrollTo({ left: alvo.offsetLeft - cards[0].offsetLeft, behavior: comportamento() });
+      }
+    };
+
+    /* QA-024: o JS alterna só o estado semântico. A cor mora numa regra
+       própria chaveada em [aria-current] — duas utilitárias disputando
+       background-color seriam decididas pela ordem no CSS, não pela
+       ordem em que o JS as aplicou. E aria-current é o que o leitor de
+       tela precisa ouvir de qualquer jeito. */
+    const marcar = (i: number) =>
+      pontos.forEach((p, k) =>
+        k === i ? p.setAttribute('aria-current', 'true') : p.removeAttribute('aria-current')
+      );
+
+    // Indicadores sincronizados pelo próprio trilho: sem listener de scroll,
+    // sem throttle, e o browser é quem decide quando medir.
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        for (const e of entradas) {
+          if (e.isIntersecting) marcar(cards.indexOf(e.target as HTMLElement));
+        }
+      },
+      { root: trilho, threshold: 0.6 }
+    );
+    cards.forEach((c) => observador.observe(c));
+
+    pontos.forEach((p, i) => p.addEventListener('click', () => irPara(i)));
+
+    // Teclado: o trilho focado anda de card em card, não de pixel em pixel.
+    trilho.addEventListener('keydown', (ev: KeyboardEvent) => {
+      const passo: Record<string, number | 'inicio' | 'fim'> = {
+        ArrowRight: 1,
+        ArrowLeft: -1,
+        Home: 'inicio',
+        End: 'fim',
+      };
+      const acao = passo[ev.key];
+      if (acao === undefined) return;
+      ev.preventDefault();
+      const atual = Math.max(
+        0,
+        pontos.findIndex((p) => p.getAttribute('aria-current') === 'true')
+      );
+      irPara(acao === 'inicio' ? 0 : acao === 'fim' ? cards.length - 1 : atual + acao);
+    });
+
+    /* O tabindex vem no HTML porque é o padrão seguro — vale mesmo sem JS,
+       e é no mobile que ele importa. No desktop o trilho não rola, e uma
+       parada de tabulação que não leva a lugar nenhum é ruído: some. */
+    const ajustarFoco = () => {
+      const rola = trilho.scrollWidth > trilho.clientWidth + 1;
+      if (rola) trilho.setAttribute('tabindex', '0');
+      else trilho.removeAttribute('tabindex');
+    };
+    ajustarFoco();
+    new ResizeObserver(ajustarFoco).observe(trilho);
+  }
+</script>
+
+<style>
+  /* Três cinzas claros convivem neste layout; este é o --color-surface-mid.
+     Ver a nota no @theme do global.css. */
+  .secao {
+    background: var(--color-surface-mid);
+  }
+
+  .bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .bloco-titulo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  /* A .eyebrow vale 14px no mobile; aqui o Figma pede 16px nos dois
+     viewports (pílula de 37px de altura, medida na referência). */
+  .eyebrow {
+    font-size: 16px;
+  }
+
+  /* O <h2> é a RAIZ do RevealText, e o <style> com escopo do Astro não
+     carimba a raiz de um componente filho — `.h2` sozinho não alcançaria.
+     Ancorado no pai, que é do meu template, o :global não vaza.
+     Ver playbook/09-qa-erros-comuns.md#qa-030 */
+  .bloco-titulo :global(.h2) {
+    font-size: 24px;
+  }
+
+  /* PENDÊNCIA DE TOKEN: 18px/1.3 não tem utilitária. A .body vale 16/1.5,
+     e é dela que vêm peso e cor. Falta um `.body-lg` no global.css. */
+
+
+  .carrossel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .trilho {
+    display: flex;
+    align-items: stretch;
+    gap: 40px;
+    /* Aqui o trilho é item de um flex em LINHA, então sem largura ele
+       dimensiona pelo conteúdo e estoura. A largura já soma a sangria das
+       margens negativas abaixo: 327 + 48 = 375, encostando nas duas bordas. */
+    width: calc(100% + 48px);
+    overflow-x: auto;
+    /* Sangra até a borda real da tela. Sem isso o recorte do overflow
+       acontece na caixa de conteúdo, 24px para dentro, e o card seguinte
+       aparece "cortado" em vez de entrar pela lateral do navegador. O
+       padding devolve o alinhamento com a grade, e o scroll-padding faz o
+       snap parar no mesmo lugar. */
+    margin-inline: -24px;
+    padding-inline: 24px;
+    scroll-padding-inline: 24px;
+
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    /* QA-023: com um eixo diferente de `visible`, o outro deixa de ser
+       visible também — o trilho recorta na vertical mesmo tendo pedido só
+       rolagem horizontal. A folga cobre o y:28 do revealStagger e o anel
+       de foco; a margem negativa devolve o espaçamento do Figma. */
+    padding-block: 32px;
+    margin-block: -32px;
+    /* O desenho não tem barra de rolagem: quem dá a pista são os
+       indicadores. No macOS ela já é overlay. */
+    scrollbar-width: none;
+  }
+
+  .trilho::-webkit-scrollbar {
+    display: none;
+  }
+
+  .trilho > :global(*) {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .pontos {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 20×8 e 36×8, raio 4 — as duas barrinhas do Figma (6032:3810). O
+     inativo é o mesmo verde a 30%, medido na referência: sobre o fundo da seção
+     ele dá (195, 233, 201). */
+  .ponto {
+    position: relative;
+    width: 20px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+    transition:
+      width 250ms ease,
+      background-color 250ms ease;
+  }
+
+  /* QA-024: estado ativo em regra própria, chaveada no atributo. */
+  .ponto[aria-current='true'] {
+    width: 36px;
+    background: var(--color-accent);
+  }
+
+  /* Alvo de toque maior que o desenho, sem mexer no layout: 24×44 no
+     inativo e 40×44 no ativo. O recuo horizontal é de 2px justamente
+     para os dois alvos não se sobreporem no gap de 4px. */
+  .ponto::before {
+    content: '';
+    position: absolute;
+    inset: -18px -2px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .ponto:hover {
+      background: var(--color-accent);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    /* Coluna de texto de 384 + carrossel no resto, 32 de gap. As margens
+       fazem o papel do row-gap de propósito: com `row-gap` a quarta faixa
+       (a que absorve a altura do carrossel) ganharia um vão de 32px
+       sempre, inclusive quando ela mede zero. */
+    .bloco {
+      display: grid;
+      grid-template-columns: 384px 1fr;
+      grid-template-rows: auto auto auto 1fr;
+      column-gap: 32px;
+      row-gap: 0;
+    }
+
+    .bloco-titulo {
+      grid-area: 1 / 1;
+      margin-bottom: 32px;
+    }
+
+    .intro {
+      grid-area: 2 / 1;
+      margin-bottom: 32px;
+    }
+
+    .acao {
+      grid-area: 3 / 1;
+    }
+
+    .carrossel {
+      grid-area: 1 / 2 / 5 / 3;
+      align-self: start;
+    }
+
+    .bloco-titulo :global(.h2) {
+      font-size: 36px;
+    }
+
+    /* No desktop os dois cards ficam lado a lado: nada rola, nada recorta,
+       e o trilho volta para dentro da grade. */
+    .trilho {
+      overflow-x: visible;
+      scroll-snap-type: none;
+      gap: 32px;
+      padding-block: 0;
+      margin-block: 0;
+      margin-inline: 0;
+      padding-inline: 0;
+      width: 100%;
+    }
+
+    .trilho > :global(*) {
+      flex: 1 1 0;
+    }
+
+    .pontos {
+      display: none;
+    }
+  }
+</style>
