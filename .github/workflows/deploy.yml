@@ -1,0 +1,116 @@
+# Publica o site na Hostinger a cada push na main.
+#
+# O deploy é feito pela API da Hostinger, não por FTP: o único segredo
+# necessário é HOSTINGER_API_TOKEN, cadastrado em
+# Settings -> Secrets and variables -> Actions.
+#
+# Para reaproveitar em outro projeto, basta trocar HOSTINGER_DOMAIN.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Um deploy por vez. Não cancela o que está no meio: a API sobrescreve o
+# public_html, e duas extrações simultâneas deixariam o site pela metade.
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+env:
+  HOSTINGER_USER: u508800870
+  HOSTINGER_DOMAIN: ardagh.maatz.com.br
+  API: https://developers.hostinger.com
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: producao
+      url: https://ardagh.maatz.com.br
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # O zip é do CONTEÚDO de dist/, não da pasta: a Hostinger extrai o
+      # arquivo direto na raiz do public_html.
+      - name: Empacota o dist
+        run: cd dist && zip -rq ../site.zip .
+
+      - name: Envia o arquivo (TUS)
+        env:
+          TOKEN: ${{ secrets.HOSTINGER_API_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TOKEN:-}" ]; then
+            echo "::error::secret HOSTINGER_API_TOKEN não está configurado no repositório"
+            exit 1
+          fi
+
+          creds=$(curl -fsS -X POST "$API/api/hosting/v1/files/upload-urls" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"$HOSTINGER_USER\",\"domain\":\"$HOSTINGER_DOMAIN\"}")
+
+          URL=$(jq -er .url          <<<"$creds")
+          AUTH=$(jq -er .auth_key    <<<"$creds")
+          REST=$(jq -er .rest_auth_key <<<"$creds")
+          SIZE=$(stat -c%s site.zip)
+          echo "enviando site.zip ($SIZE bytes)"
+
+          # 1. cria o upload
+          curl -fsS -o /dev/null -X POST "$URL/site.zip?override=true" \
+            -H "X-Auth: $AUTH" -H "X-Auth-Rest: $REST" \
+            -H 'Tus-Resumable: 1.0.0' \
+            -H "Upload-Length: $SIZE" -H 'Upload-Offset: 0'
+
+          # 2. manda os bytes
+          offset=$(curl -fsS -o /dev/null -D - -X PATCH "$URL/site.zip?override=true" \
+            -H "X-Auth: $AUTH" -H "X-Auth-Rest: $REST" \
+            -H 'Tus-Resumable: 1.0.0' \
+            -H 'Content-Type: application/offset+octet-stream' \
+            -H 'Upload-Offset: 0' \
+            --data-binary @site.zip \
+            | tr -d '\r' | awk 'tolower($1)=="upload-offset:"{print $2}')
+
+          # Sem isso, um upload truncado viraria um deploy de zip corrompido.
+          if [ "$offset" != "$SIZE" ]; then
+            echo "::error::upload incompleto: $offset de $SIZE bytes"
+            exit 1
+          fi
+
+      - name: Publica
+        env:
+          TOKEN: ${{ secrets.HOSTINGER_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST \
+            "$API/api/hosting/v1/accounts/$HOSTINGER_USER/websites/$HOSTINGER_DOMAIN/deploy" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"$HOSTINGER_USER\",\"domain\":\"$HOSTINGER_DOMAIN\",\"archive_path\":\"site.zip\"}"
+
+      # A API responde "Request accepted" e extrai em background, então o
+      # passo acima passar não significa que o site já mudou.
+      - name: Confere se o site respondeu
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -L "https://$HOSTINGER_DOMAIN/")
+            echo "tentativa $i: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 6
+          done
+          echo "::error::site não respondeu 200 depois do deploy"
+          exit 1
