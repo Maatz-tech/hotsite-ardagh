@@ -1,4 +1,5 @@
 ---
+import { srcsetVariantes } from '../../lib/imagens';
 /**
  * A Ardagh Metal Packaging — Figma 6031:2339 (desktop 1440×663) e
  * 6033:4549 (mobile 375×1110).
@@ -57,6 +58,8 @@ const PARAGRAFOS = [
           <div class="janela-lata">
             <img
               src="/images/a-ardagh/latinha.webp"
+        srcset={srcsetVariantes('/images/a-ardagh/latinha.webp', [440], 464)}
+        sizes="(min-width: 441px) 232px, calc(59.03vw - 28px)"
               alt=""
               aria-hidden="true"
               width="464"

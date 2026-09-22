@@ -11,11 +11,18 @@ export const SITE_NAME = 'Programa Crescer — Ardagh Metal Packaging';
 
 /**
  * URL final, sem barra no fim. Usada em canonical, OG e sitemap.
- * PENDÊNCIA: domínio não definido. O valor abaixo é proposital —
- * o grep de pré-entrega (playbook/08-entrega.md) quebra enquanto
- * ele estiver aqui, então não tem como escapar para produção.
+ * Precisa ser igual ao `site` do astro.config.mjs — os dois andam juntos.
  */
-export const SITE_URL = 'https://exemplo.com.br';
+export const SITE_URL = 'https://ardagh.maatz.com.br';
+
+/**
+ * Chave única da indexação. Enquanto for `false`:
+ *   · o Base.astro emite <meta name="robots" content="noindex, nofollow">
+ *   · o robots.txt bloqueia tudo e não anuncia o sitemap
+ * No lançamento, virar `true` e publicar — não há mais nada a mexer.
+ * A nota de SEO do Lighthouse fica baixa de propósito até lá.
+ */
+export const INDEXAVEL = false;
 
 /**
  * Destino do CTA principal — o botão "Inscreva-se agora" aparece no
@@ -66,3 +73,11 @@ export const MAATZ_URL =
 /** Prazo de inscrição — aparece na tarja e no selo do "jeito Ardagh". */
 export const PRAZO_CURTO = '05/11';
 export const PRAZO_LONGO = '05/NOV';
+
+/**
+ * Janela de inscrição em ISO, para o JSON-LD de vaga. Vem da etapa 1 de
+ * `src/data/etapas.ts` ("06 de outubro a 05 de novembro") cruzada com a
+ * etapa 2 ("novembro de 2026"), que fixa o ano.
+ */
+export const INSCRICOES_ABREM = '2026-10-06';
+export const INSCRICOES_FECHAM = '2026-11-05T23:59:59-03:00';

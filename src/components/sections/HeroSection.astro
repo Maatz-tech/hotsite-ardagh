@@ -1,4 +1,5 @@
 ---
+import { srcsetVariantes } from '../../lib/imagens';
 /**
  * Hero — Figma 6009:409 (desktop 1440×706) e 6032:3416 (mobile 375×904).
  *
@@ -69,6 +70,8 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
       <!-- latas, ao fundo à direita -->
       <img
         src="/images/hero/foto-3.webp"
+        srcset={srcsetVariantes('/images/hero/foto-3.webp', [210], 352)}
+        sizes="(min-width: 676px) 176px, calc(28.03vw - 13px)"
         alt=""
         aria-hidden="true"
         width="352"
@@ -80,6 +83,8 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
       <!-- a moldura: foto retangular com o fundo da fábrica -->
       <img
         src="/images/hero/foto-2.webp"
+        srcset={srcsetVariantes('/images/hero/foto-2.webp', [440], 756)}
+        sizes="(min-width: 676px) 378px, calc(60.19vw - 29px)"
         alt=""
         aria-hidden="true"
         width="756"
@@ -101,6 +106,8 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
       <div class="peca selo">
         <img
           src="/images/hero/selo.webp"
+          srcset={srcsetVariantes('/images/hero/selo.webp', [160], 272)}
+          sizes="(min-width: 676px) 136px, calc(21.66vw - 10px)"
           alt=""
           aria-hidden="true"
           width="272"
@@ -113,6 +120,8 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
       <!-- a foto principal -->
       <img
         src="/images/hero/foto-1.webp"
+        srcset={srcsetVariantes('/images/hero/foto-1.webp', [460], 785)}
+        sizes="(min-width: 676px) 392px, calc(62.48vw - 30px)"
         alt="Estagiária da Ardagh Metal Packaging na linha de produção"
         width="785"
         height="850"
@@ -126,6 +135,8 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
       <div class="peca latinha">
         <img
           src="/images/hero/latinha.webp"
+          srcset={srcsetVariantes('/images/hero/latinha.webp', [110], 180)}
+          sizes="(min-width: 676px) 90px, calc(14.33vw - 7px)"
           alt=""
           aria-hidden="true"
           width="180"

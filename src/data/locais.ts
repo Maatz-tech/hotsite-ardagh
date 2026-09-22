@@ -60,8 +60,13 @@ export interface Unidade {
   id: string;
   /** Rótulo da aba e título do painel. */
   nome: string;
+  /** Cidade e UF separadas — o JSON-LD de vaga precisa dos dois campos. */
+  cidade: string;
+  uf: string;
   /** Valor mensal da bolsa-auxílio, já formatado. */
   bolsa: string;
+  /** O mesmo valor em número, para o `baseSalary` do JSON-LD. */
+  bolsaValor: number;
   mapa: Mapa;
   beneficios: Beneficio[];
   /** Linha corrida do bloco "E MAIS:", com os separadores "•" do layout. */
@@ -92,7 +97,10 @@ export const UNIDADES: Unidade[] = [
   {
     id: 'sao-paulo-sp',
     nome: 'São Paulo/SP',
+    cidade: 'São Paulo',
+    uf: 'SP',
     bolsa: 'R$ 1.900,00',
+    bolsaValor: 1900,
     mapa: { estado: 'sp', pino: { x: 114, y: 62 } },
     beneficios: beneficios('Transporte Flex'),
     eMais: `${E_MAIS_BASE} • Quick Massage • Assessoria de corrida`,
@@ -101,7 +109,10 @@ export const UNIDADES: Unidade[] = [
   {
     id: 'jacarei-sp',
     nome: 'Jacareí/SP',
+    cidade: 'Jacareí',
+    uf: 'SP',
     bolsa: 'R$ 1.900,00',
+    bolsaValor: 1900,
     mapa: { estado: 'sp', pino: { x: 122, y: 59 } },
     beneficios: beneficios('Transporte fretado'),
     eMais: E_MAIS_BASE,

@@ -1,17 +1,22 @@
 ---
 import '../styles/global.css';
-import { SITE_URL, SITE_NAME } from '../data/site';
+import { SITE_URL, SITE_NAME, INDEXAVEL } from '../data/site';
 
 interface Props {
   title: string;
   description?: string;
   /** Caminho da imagem OG (1200×630). Relativo a /public. */
   ogImage?: string;
-  /** Imagem do LCP — entra como <link rel="preload"> no <head>. */
-  preloadImage?: string | string[];
   /**
-   * Bloqueia indexação. Fica LIGADO enquanto o cliente não aprova —
-   * o SEO do Lighthouse cai de propósito. Desligar no lançamento.
+   * Imagem do LCP — entra como <link rel="preload"> no <head>.
+   * Quando a imagem tem `srcset`, o preload precisa do MESMO par
+   * srcset/sizes: sem isso o navegador pré-carrega um arquivo e depois
+   * escolhe outro, e baixa os dois.
+   */
+  preloadImage?: (string | { href: string; srcset?: string; sizes?: string })[] | string;
+  /**
+   * Bloqueia indexação. O padrão vem da chave `INDEXAVEL` em
+   * src/data/site.ts, que governa isto e o robots.txt de uma vez.
    */
   naoIndexar?: boolean;
   /** JSON-LD extra além do Organization. */
@@ -23,7 +28,7 @@ const {
   description = 'Programa de Estágio Ardagh Metal Packaging 2027. Você não precisa chegar pronto, precisa começar. Inscrições até 05/11.',
   ogImage = '/og.jpg',
   preloadImage,
-  naoIndexar = true,
+  naoIndexar = !INDEXAVEL,
   dadosEstruturados = [],
 } = Astro.props;
 
@@ -84,7 +89,21 @@ const jsonLd = [
       crossorigin
     />
 
-    {preloads.map((src) => <link rel="preload" as="image" href={src} />)}
+    {
+      preloads.map((img) =>
+        typeof img === 'string' ? (
+          <link rel="preload" as="image" href={img} />
+        ) : (
+          <link
+            rel="preload"
+            as="image"
+            href={img.href}
+            imagesrcset={img.srcset}
+            imagesizes={img.sizes}
+          />
+        ),
+      )
+    }
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

@@ -42,7 +42,41 @@ previsto: as diferenças de altura caíram de até −78px para no máximo −9p
 - [x] **0. Intake** — scaffold, 23 prints de referência, tokens, `site.ts`, `MAPA.md`, noindex
 - [x] **1. Header + Hero + Footer** — feito, aguardando sua revisão
 - [x] **2. Miolo** — as 9 seções feitas, aguardando revisão
-- [ ] **3. Pré-entrega** — [playbook/08-entrega.md](playbook/08-entrega.md)
+- [x] **3. Pré-entrega** — sitemap, JSON-LD, OG, favicon e performance feitos.
+      Falta só virar `INDEXAVEL` no lançamento
+
+## Performance — medido no build
+
+| | mobile | desktop | alvo do playbook |
+|---|---|---|---|
+| Performance | **98** | **100** | 95 |
+| Acessibilidade | **97** | **97** | 95 |
+| Best Practices | **100** | **100** | 100 |
+| SEO | 69 | 69 | bloqueado de propósito |
+
+LCP 2,3 s no mobile e 0,5 s no desktop · CLS 0 · TBT 0 ms.
+
+O SEO fica em 69 só por causa do `noindex`. Virando `INDEXAVEL` em
+`src/data/site.ts`, o meta sai, o robots libera e passa a anunciar o
+sitemap — é a única coisa que falta para a nota subir.
+
+A acessibilidade fica em 97 pelo contraste da paleta, decisão registrada
+mais abaixo.
+
+### Imagens
+
+`scripts/gerar-variantes.mjs` gera uma versão menor de cada foto pesada e
+`src/lib/imagens.ts` monta o `srcset`. Sem isso o celular baixava o arquivo
+dimensionado para o desktop em 2× — eram 186 KB de desperdício, hoje 12 KB.
+
+O `sizes` de cada imagem é a largura CSS **real** da peça, não uma
+aproximação: as peças do hero são uma porcentagem de `100vw - 48px` até
+saturarem no teto da composição. Um `sizes` inflado em 20px faz o navegador
+pular para o arquivo grande e a variante não serve para nada.
+
+O preload do LCP carrega o MESMO par `srcset`/`sizes` da imagem
+(`imagesrcset`/`imagesizes`). Sem isso ele pré-carrega um arquivo, o
+`srcset` escolhe outro, e o navegador baixa os dois.
 
 Inventário e status por seção: [docs/figma/MAPA.md](docs/figma/MAPA.md).
 
@@ -63,11 +97,11 @@ Todas estão marcadas como `PENDÊNCIA` no código, no ponto exato onde entram.
 | — | ~~Arquivos da Gotham Rounded~~ | ✅ 4 pesos servidos do próprio domínio |
 | — | ~~URLs das 3 redes~~ | ✅ Instagram, LinkedIn e site institucional |
 | 4 | URL da política de privacidade | `LEGAL_LINKS` | nada |
-| 5 | Domínio final | `SITE_URL` | canonical, OG e sitemap na pré-entrega |
+| — | ~~Domínio~~ | ✅ `https://ardagh.maatz.com.br` (provisório) |
 | 6 | Confirmar o crédito "Desenvolvido por Maatz" do rodapé | `public/images/footer/maatz-branco.svg` | nada — veio do Figma |
-| 7 | Imagem OG 1200×630 | `public/og.jpg` | pré-entrega |
+| — | ~~Imagem OG 1200×630~~ | ✅ gerada com os assets reais do site |
 | — | ~~Favicon~~ | ✅ marca AMP, em .ico + 32/192/512 + apple-touch |
-| 8 | Remote do GitHub | — | nada |
+| — | ~~Remote do GitHub~~ | ✅ `Maatz-tech/hotsite-ardagh`, privado |
 | 9 | **Contraste da paleta reprova na WCAG AA** | decisão de design | nota de Acessibilidade abaixo da meta |
 | — | ~~Confirmar as 2 unidades~~ | ✅ confirmado pelo cliente: São Paulo/SP e Jacareí/SP |
 

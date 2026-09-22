@@ -11,12 +11,67 @@ import PreRequisitosSection from '../components/sections/PreRequisitosSection.as
 import EtapasSection from '../components/sections/EtapasSection.astro';
 import JeitoArdaghSection from '../components/sections/JeitoArdaghSection.astro';
 import AArdaghSection from '../components/sections/AArdaghSection.astro';
+import { UNIDADES } from '../data/locais';
+import { srcsetVariantes } from '../lib/imagens';
+import { CTA_URL, INSCRICOES_ABREM, INSCRICOES_FECHAM } from '../data/site';
+
+/**
+ * JSON-LD de vaga. Montado a partir de `locais.ts` e `site.ts` para não
+ * divergir do que a página mostra: se a bolsa ou uma unidade mudarem lá,
+ * mudam aqui junto.
+ *
+ * As datas saem da etapa 1 de `etapas.ts` ("06 de outubro a 05 de
+ * novembro") cruzada com a etapa 2 ("novembro de 2026"), que fixa o ano.
+ */
+const vaga = {
+  '@context': 'https://schema.org',
+  '@type': 'JobPosting',
+  title: 'Estágio — Programa Crescer Ardagh Metal Packaging 2027',
+  description:
+    'Programa de estágio da Ardagh Metal Packaging para quem está nos dois últimos anos de bacharelado ou tecnólogo. Sem exigência de experiência prévia: o estagiário lidera um projeto real, desenvolve novas habilidades e atua em áreas de engenharia e corporativas.',
+  employmentType: 'INTERN',
+  datePosted: INSCRICOES_ABREM,
+  validThrough: INSCRICOES_FECHAM,
+  industry: 'Embalagens de alumínio para bebidas',
+  hiringOrganization: {
+    '@type': 'Organization',
+    name: 'Ardagh Metal Packaging',
+    sameAs: 'https://www.ardaghmetalpackaging.com/',
+  },
+  jobLocation: UNIDADES.map((u) => ({
+    '@type': 'Place',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: u.cidade,
+      addressRegion: u.uf,
+      addressCountry: 'BR',
+    },
+  })),
+  baseSalary: {
+    '@type': 'MonetaryAmount',
+    currency: 'BRL',
+    value: {
+      '@type': 'QuantitativeValue',
+      value: UNIDADES[0].bolsaValor,
+      unitText: 'MONTH',
+    },
+  },
+  ...(CTA_URL.startsWith('http') ? { directApply: false, url: CTA_URL } : {}),
+};
 ---
 
 <Base
   title="Programa Crescer | Estágio Ardagh Metal Packaging 2027"
-  preloadImage={["/images/hero/bg.webp", "/images/hero/foto-1.webp"]}
+  preloadImage={[
+    '/images/hero/bg.webp',
+    {
+      href: '/images/hero/foto-1.webp',
+      srcset: srcsetVariantes('/images/hero/foto-1.webp', [460], 785),
+      sizes: '(min-width: 676px) 392px, calc(62.48vw - 30px)',
+    },
+  ]}
   description="Programa de Estágio Ardagh Metal Packaging 2027. Você não precisa chegar pronto, precisa começar. Inscrições até 05/11."
+  dadosEstruturados={[vaga]}
 >
   <Header />
 
