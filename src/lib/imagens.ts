@@ -1,3 +1,5 @@
+import { url } from './url';
+
 /**
  * Monta o `srcset` a partir das variantes geradas por
  * `scripts/gerar-variantes.mjs`, que salva `foto.webp` como `foto-420.webp`.
@@ -10,6 +12,6 @@
  *   → '/images/hero/foto-1-420.webp 420w, /images/hero/foto-1.webp 785w'
  */
 export function srcsetVariantes(src: string, larguras: number[], intrinseca: number): string {
-  const variantes = larguras.map((w) => `${src.replace(/\.webp$/, `-${w}.webp`)} ${w}w`);
-  return [...variantes, `${src} ${intrinseca}w`].join(', ');
+  const variantes = larguras.map((w) => `${url(src.replace(/\.webp$/, `-${w}.webp`))} ${w}w`);
+  return [...variantes, `${url(src)} ${intrinseca}w`].join(', ');
 }

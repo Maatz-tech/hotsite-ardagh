@@ -1,0 +1,63 @@
+# Publica o site no GitHub Pages a cada push na main.
+#
+# Roda ao lado de deploy.yml: o mesmo commit vai para a Hostinger, na raiz de
+# ardagh.maatz.com.br, e para cá, em maatz-tech.github.io/hotsite-ardagh. O
+# que muda entre os dois é só o par SITE_URL + BASE_PATH que o astro.config
+# lê do ambiente — aqui os dois vêm do próprio Pages, não escritos à mão.
+#
+# Não usa segredo nenhum: o deploy é autenticado pelo OIDC do próprio job,
+# que é o motivo de `id-token: write` abaixo.
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Um deploy por vez, sem cancelar o que já está no meio. Grupo próprio: o
+# deploy da Hostinger tem o dele e os dois não disputam.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Devolve a origem e o subcaminho onde o Pages vai servir o site.
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

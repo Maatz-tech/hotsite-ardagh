@@ -20,6 +20,7 @@
 import Button from './Button.astro';
 import Menu from './icons/Menu.astro';
 import { NAV_LINKS, CTA_URL, CTA_LABEL, SITE_NAME } from '../data/site';
+import { url } from '../lib/url';
 ---
 
 <header
@@ -31,7 +32,7 @@ import { NAV_LINKS, CTA_URL, CTA_LABEL, SITE_NAME } from '../data/site';
   >
     <a href="#hero" class="shrink-0" aria-label={`${SITE_NAME} — início`}>
       <img
-        src="/images/brand/amp-logo.svg"
+        src={url('/images/brand/amp-logo.svg')}
         alt="Ardagh Metal Packaging"
         width="244"
         height="44"

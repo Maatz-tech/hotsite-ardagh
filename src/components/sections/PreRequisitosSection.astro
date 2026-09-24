@@ -60,6 +60,7 @@ import PreFormacao from '../icons/PreFormacao.astro';
 import PreAreas from '../icons/PreAreas.astro';
 import PreFormato from '../icons/PreFormato.astro';
 import { CTA_URL, CTA_LABEL } from '../../data/site';
+import { url } from '../../lib/url';
 
 const CARDS = [
   {
@@ -91,7 +92,7 @@ const CARDS = [
        aqui ela já veio do cache. `lazy` porque a seção está abaixo da
        dobra e não custa nada — o hero já a pediu com prioridade alta. -->
   <img
-    src="/images/hero/bg.webp"
+    src={url('/images/hero/bg.webp')}
     alt=""
     aria-hidden="true"
     width="1920"

@@ -11,9 +11,11 @@ export const SITE_NAME = 'Programa Crescer — Ardagh Metal Packaging';
 
 /**
  * URL final, sem barra no fim. Usada em canonical, OG e sitemap.
- * Precisa ser igual ao `site` do astro.config.mjs — os dois andam juntos.
+ * Vem do `site` do astro.config.mjs, que muda conforme o destino do
+ * build — a Hostinger na raiz, o GitHub Pages sob /hotsite-ardagh.
+ * O caminho do base entra por src/lib/url.ts, não aqui.
  */
-export const SITE_URL = 'https://ardagh.maatz.com.br';
+export const SITE_URL = import.meta.env.SITE.replace(/\/$/, '');
 
 /**
  * Chave única da indexação. Enquanto for `false`:

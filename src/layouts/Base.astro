@@ -1,4 +1,5 @@
 ---
+import { url } from '../lib/url';
 import '../styles/global.css';
 import { SITE_URL, SITE_NAME, INDEXAVEL } from '../data/site';
 
@@ -33,7 +34,7 @@ const {
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, SITE_URL).href;
-const ogImageUrl = new URL(ogImage, SITE_URL).href;
+const ogImageUrl = new URL(url(ogImage), SITE_URL).href;
 const preloads = preloadImage ? [preloadImage].flat() : [];
 
 const jsonLd = [
@@ -58,10 +59,10 @@ const jsonLd = [
          raiz sem ler o HTML; o de 32 serve a aba; o de 180 é do iOS e vai
          sobre BRANCO, porque lá o alfa é composto sobre preto e o anel
          cinza do logo sumiria. -->
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="/favicon-192.png" sizes="192x192" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href={url('/favicon.ico')} sizes="32x32" />
+    <link rel="icon" type="image/png" href={url('/favicon-32.png')} sizes="32x32" />
+    <link rel="icon" type="image/png" href={url('/favicon-192.png')} sizes="192x192" />
+    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
     <title>{title}</title>
 
     {naoIndexar && <meta name="robots" content="noindex, nofollow" />}
@@ -78,26 +79,26 @@ const jsonLd = [
       rel="preload"
       as="font"
       type="font/woff2"
-      href="/fonts/gotham-rounded-book.woff2"
+      href={url('/fonts/gotham-rounded-book.woff2')}
       crossorigin
     />
     <link
       rel="preload"
       as="font"
       type="font/woff2"
-      href="/fonts/gotham-rounded-medium.woff2"
+      href={url('/fonts/gotham-rounded-medium.woff2')}
       crossorigin
     />
 
     {
       preloads.map((img) =>
         typeof img === 'string' ? (
-          <link rel="preload" as="image" href={img} />
+          <link rel="preload" as="image" href={url(img)} />
         ) : (
           <link
             rel="preload"
             as="image"
-            href={img.href}
+            href={url(img.href)}
             imagesrcset={img.srcset}
             imagesizes={img.sizes}
           />

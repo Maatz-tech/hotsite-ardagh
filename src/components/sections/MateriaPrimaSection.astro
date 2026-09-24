@@ -1,4 +1,5 @@
 ---
+import { url } from '../../lib/url';
 import { srcsetVariantes } from '../../lib/imagens';
 /**
  * Matéria prima — Figma 6024:374 (desktop 1440×645) e 6032:3718 (mobile 375×1179).
@@ -43,7 +44,7 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
         <div class="composicao w-full max-w-[399px]" data-reveal-stagger>
           <!-- parede com o letreiro, à esquerda -->
           <img
-            src="/images/materia-prima/foto-parede.webp"
+            src={url('/images/materia-prima/foto-parede.webp')}
             alt=""
             aria-hidden="true"
             width="310"
@@ -55,7 +56,7 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
 
           <!-- vitrô de blocos de vidro, à direita -->
           <img
-            src="/images/materia-prima/foto-vitro.webp"
+            src={url('/images/materia-prima/foto-vitro.webp')}
         srcset={srcsetVariantes('/images/materia-prima/foto-vitro.webp', [350], 436)}
         sizes="(min-width: 447px) 218px, calc(54.64vw - 26px)"
             alt=""
@@ -69,7 +70,7 @@ import { CTA_URL, CTA_LABEL } from '../../data/site';
 
           <!-- o recorte da pessoa, por cima das duas fotos -->
           <img
-            src="/images/materia-prima/recorte.webp"
+            src={url('/images/materia-prima/recorte.webp')}
         srcset={srcsetVariantes('/images/materia-prima/recorte.webp', [480], 606)}
         sizes="(min-width: 447px) 303px, calc(75.94vw - 36px)"
             alt="Colaboradora da Ardagh Metal Packaging segurando uma lata"

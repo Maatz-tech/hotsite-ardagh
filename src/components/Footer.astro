@@ -11,6 +11,7 @@ import Instagram from './icons/Instagram.astro';
 import LinkedIn from './icons/LinkedIn.astro';
 import Site from './icons/Site.astro';
 import { SOCIAL_LINKS, LEGAL_LINKS } from '../data/site';
+import { url } from '../lib/url';
 
 const ICONS = { Instagram, LinkedIn, Site };
 ---
@@ -23,7 +24,7 @@ const ICONS = { Instagram, LinkedIn, Site };
       data-reveal-stagger
     >
       <img
-        src="/images/footer/eureca.webp"
+        src={url('/images/footer/eureca.webp')}
         alt="Eureca"
         width="336"
         height="62"
@@ -32,7 +33,7 @@ const ICONS = { Instagram, LinkedIn, Site };
       />
 
       <img
-        src="/images/footer/amp-branco.svg"
+        src={url('/images/footer/amp-branco.svg')}
         alt="Ardagh Metal Packaging"
         width="356"
         height="64"

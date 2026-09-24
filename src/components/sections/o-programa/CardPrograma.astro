@@ -1,5 +1,6 @@
 ---
 import { srcsetVariantes } from '../../../lib/imagens';
+import { url } from '../../../lib/url';
 /**
  * Card do "O Programa" — foto com selo, título e texto.
  * Figma 6027:708 / 6027:719 (desktop) e 6032:3786 / 6032:3796 (mobile).
@@ -31,7 +32,7 @@ const Icone = icone === 'folha' ? OProgramaFolha : OProgramaFoguete;
 <article class="card-programa">
   <div class="moldura">
     <img
-      src={imagem}
+      src={url(imagem)}
       srcset={srcsetVariantes(imagem, [540], 640)}
       sizes="(min-width: 1024px) 320px, calc(100vw - 112px)"
       alt={alt}

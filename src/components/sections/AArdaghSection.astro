@@ -1,4 +1,5 @@
 ---
+import { url } from '../../lib/url';
 import { srcsetVariantes } from '../../lib/imagens';
 /**
  * A Ardagh Metal Packaging — Figma 6031:2339 (desktop 1440×663) e
@@ -57,7 +58,7 @@ const PARAGRAFOS = [
                Figma, não a caixa. -->
           <div class="janela-lata">
             <img
-              src="/images/a-ardagh/latinha.webp"
+              src={url('/images/a-ardagh/latinha.webp')}
         srcset={srcsetVariantes('/images/a-ardagh/latinha.webp', [440], 464)}
         sizes="(min-width: 441px) 232px, calc(59.03vw - 28px)"
               alt=""
@@ -75,7 +76,7 @@ const PARAGRAFOS = [
         </div>
 
         <img
-          src="/images/a-ardagh/foto.webp"
+          src={url('/images/a-ardagh/foto.webp')}
           alt="Latas de alumínio produzidas pela Ardagh Metal Packaging"
           width="284"
           height="554"
